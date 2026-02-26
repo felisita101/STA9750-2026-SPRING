@@ -1,0 +1,43 @@
+---
+title: "YOU DIE ONCE, so LIVE everyday"
+
+---
+# Think
+Science has revealed that thes earth is smaller than a nanometer in the ever expanding universe. It is a revelation of paradox of paradox, and an order out of chaos. Human body is a nanometer to the earth's size, yet human body of trillions of cells is the mysterious enmeshing of the smallest cell with the biggest cell. God is humorous and wonderful.  
+\
+**Life is a journey of personal confrontation** \
+Whether you are 6, 16, or 106, you cannot escape the pain of human journey. Everyone left their mother's womb crying and death is the last sting. My God Jesus said, "Forgive your enemies." True healing comes from forgiveness in faith because humans are part spirit, part dust. It is a journey of realization that TRUE LOVE is forgiveness. God showed humans what true love means: die in their place. 
+
+## Cat Got Your Tongue
+![My photo](https://meowlifestyle.com/wp-content/uploads/2017/03/image2.png)
+
+## My Links
+- [LinkedIn](https://linkedin.com/in/felisita101)
+
+```{r}
+#| include: false
+1+1
+```
+--------------
+Last Updated: `r format(Sys.time(), "%A %m %d, %Y at %H:%M%p")`
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+if(!require("leaflet")){
+    options(repos=c(CRAN="https://cloud.r-project.org"))
+    install.packages("leaflet")
+    stopifnot(require("leaflet"))
+}
+
+baruch_longitude <- 141.4195094
+baruch_latitude  <- 38.2978128
+
+leaflet() |>
+  addTiles() |>
+  setView(baruch_longitude, baruch_latitude, zoom=14) |>
+  addPopups(baruch_longitude, baruch_latitude, 
+            "Cat Island here!")
+```
