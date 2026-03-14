@@ -1,0 +1,422 @@
+---
+title: "IPEDS"
+format: html
+---
+
+### **SPECIAL PROOF** To start-off this project, I would like to take a bow and declare that I've worked over 15 hours on this project. The initial codes were easy enough but debugging to find out that I'm simply missing ")" one element delayed my work for over 30 minutes, navigating through various icons require a "sleepless in Seattle" moment.
+
+Below is a photo of some of my notes to visualize the pattern I must follow. I would gladly, irrevocably and reverently pursue much analysis but my butt suffers from heated chair-sores. I love analysis but now in pursuit to like coding.
+
+![The NOTEBOOK (not the movie)](images/mp-01%20NOTEBOOK.jpg)
+
+**OVERVIEW**\
+Since 1986, the Integrated Postsecondary Education System (IPEDS), administered by the Department of Education, is a mandatory collection of enrolled students and information of which includes the race and sex. Absolutely, all colleges and universities must comply, but by June 2023, the Supreme Court ruled that race can no longer be an admissible factor in college acceptance.
+
+**OBJECTIVE**\
+This research will take a macro view of the entire situation of IPEDS and will further investigate the data on undergrad admission on two pivotal years : 2013 and 2023. The year 2023 is a milestone on the nullification of the affirmative action in colleges' admission.
+
+Furthermore, we will focus on the five most populous states in the United States, namely: California, Florida, New York, Pennsylvania, and Texas. Factoring all the changes on these states, we can provide a higher probability of essential answers to our main questions.
+
+**QUESTIONS**\
+1. The U.S. Census shows that from 2013 to 2024, the average population of 18-24 years old is approximately at 13.5 million, with averaged racial distribution of :
+
+Non-Hispanic White = 36.5%,\
+Non-Hispanic Black = 13%,\
+Hispanic/Latino  - 13%\
+Non-Hispanic Asians = 3%.\
+What observations can we glean from the US Census data combines with IPEDS?
+
+2.Compare the 2013 and 2023 undergrad enrollment results of the Top 5 most populous states. What are their proportions to each other?
+
+3.Between 2013 and 2024, what are the major changes in enrollment pattern?
+
+4.Is IPEDS still relevant?\
+
+**THE R SCRIPT**
+
+```{r}
+#/ error: true
+#/ warning: true
+#/ message: true
+#/ echo: true
+
+#' Acquire IPEDS Data for MP#01
+#' 
+#' This function will acquire and standardize all data for MP#01
+#' from IPEDS (https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx)
+#' 
+#' We're starting in 2010 as the data seems to be reasonably complete 
+#' after that point. 
+
+
+acquire_ipeds_data <- function(start_year=2010, end_year=2024){
+    library(tidyverse)
+library(glue)
+library(gt)
+    
+    
+    data_dir <- file.path("data", "mp01")
+    
+    if(!dir.exists(data_dir)){
+        dir.create(data_dir, showWarnings=FALSE, recursive=TRUE)
+    }
+    
+    YEARS <- seq(start_year, end_year)
+    
+    EFA_ALL <- map(YEARS, function(yy){
+        if(yy <= 2022){
+            ef_url <- glue("https://nces.ed.gov/ipeds/datacenter/data/EF{yy}A.zip")
+            
+        } else {
+            ef_url <- glue("https://nces.ed.gov/ipeds/data-generator?year={yy}&tableName=EF{yy}A&HasRV=0&type=csv")
+        }
+        
+        ef_file <- file.path(data_dir, glue("ef{yy}a.csv.zip"))
+        
+        if(!file.exists(ef_file)){
+            message(glue("Downloading Enrollment Data for {yy} from {ef_url}"))
+            download.file(ef_url, destfile = ef_file, quiet=TRUE, mode="wb")    
+        }
+        
+        read_csv(ef_file, 
+                 show_col_types=FALSE) |>
+            mutate(year = yy, 
+                   # American Indian or Alaskan Native
+                   enrollment_m_aian = EFAIANM, 
+                   enrollment_f_aian = EFAIANW, 
+                   # Asian
+                   enrollment_m_asia = EFASIAM, 
+                   enrollment_f_asia = EFASIAW, 
+                   # Black or African-American, 
+                   enrollment_m_bkaa = EFBKAAM, 
+                   enrollment_f_bkaa = EFBKAAW, 
+                   # Hispanic 
+                   enrollment_m_hisp = EFHISPM, 
+                   enrollment_f_hisp = EFHISPW, 
+                   # Native Hawaiian or Other Pacific Islander 
+                   enrollment_m_nhpi = EFNHPIM, 
+                   enrollment_f_nhpi = EFNHPIW, 
+                   # White
+                   enrollment_m_whit = EFWHITM, 
+                   enrollment_f_whit = EFWHITW, 
+                   # Two or More Races
+                   enrollment_m_2mor = EF2MORM, 
+                   enrollment_f_2mor = EF2MORW, 
+                   # Unknown / Undisclosed Race
+                   enrollment_m_unkn = EFUNKNM, 
+                   enrollment_f_unkn = EFUNKNW, 
+                   # US Non-Resident
+                   enrollment_m_nral = EFNRALM, 
+                   enrollment_f_nral = EFNRALW, 
+            ) |> filter(
+                (EFALEVEL %in% c(2, 12)) | (LINE %in% c(1, 15))
+                # Per 2024 Data Dictionary, 
+                # - EFALEVEL 2 = undergrad 
+                # - EFALELVE 12 = grad
+                # - Line 1 = first year first time full-time undergrad
+                # - Line 15 = first year first time part-time undergrad
+            ) |> mutate(level = case_when(
+                       EFALEVEL == 2 ~ "all undergrad", 
+                       EFALEVEL == 12 ~ "all graduate",
+                       LINE %in% c(1, 15) ~ "first year undergrad"
+                   )
+            ) |>
+            select(institution_id = UNITID, 
+                   year, 
+                   level,
+                   starts_with("enrollment_")) |>
+            group_by(institution_id, 
+                     year, 
+                     level) |>
+            summarize(across(starts_with("enrollment_"), sum), 
+                      .groups = "drop")
+        
+    }) |> bind_rows()
+    
+    DESC_ALL <- map(YEARS, function(yy){
+        if(yy <= 2022){
+            hd_url <- glue("https://nces.ed.gov/ipeds/datacenter/data/HD{yy}.zip")
+            
+        } else {
+            hd_url <- glue("https://nces.ed.gov/ipeds/data-generator?year={yy}&tableName=HD{yy}&HasRV=0&type=csv")
+        }
+        
+        hd_file <- file.path(data_dir, glue("hd{yy}.csv.zip"))
+        
+        if(!file.exists(hd_file)){
+            message(glue("Downloading Institutional Descriptions for {yy} from {hd_url}"))
+            download.file(hd_url, destfile = hd_file, quiet=TRUE, mode="wb")    
+        }
+        
+        suppressWarnings(
+            read_csv(hd_file, 
+                 show_col_types=FALSE, 
+                 locale=locale(encoding=if_else(yy==2024, "utf-8", "windows-1252"))) |>
+            mutate(year = yy, 
+                   INSTNM) |> 
+            select(institution_id = UNITID, 
+                   institution_name = INSTNM, 
+                   state = STABBR, 
+                   year)
+        )
+        
+    }) |> bind_rows()
+    
+    inner_join(EFA_ALL, 
+               DESC_ALL, 
+               join_by(institution_id == institution_id, 
+                       year == year))
+}
+
+```
+
+#New Column for is_cuny
+
+```{r}
+
+ IPEDS <- acquire_ipeds_data()
+IPEDS <- IPEDS |>
+  mutate(is_cuny = str_detect(institution_name, "CUNY"))
+
+```
+
+## New Column for california_system
+
+```{r}
+
+ 
+IPEDS <- IPEDS |>
+  mutate(
+    california_system =
+      (str_detect(institution_name, "University") &
+       str_detect(institution_name, "California")) |
+      str_detect(institution_name, "California State")
+  )
+```
+
+## Enrollment of the Most populous States in the US Year2013
+
+```{r}
+
+library(gt)
+enrollment_2013 <- IPEDS |>
+  filter(year == 2013,
+         level == "all undergrad",
+         state %in% c("CA","TX","FL","NY","PA")) |>
+  group_by(state) |>
+  summarize(
+    White    = sum(enrollment_m_whit + enrollment_f_whit, na.rm = TRUE),
+    Black    = sum(enrollment_m_bkaa + enrollment_f_bkaa, na.rm = TRUE),
+    Hispanic = sum(enrollment_m_hisp + enrollment_f_hisp, na.rm = TRUE),
+    Asian    = sum(enrollment_m_asia + enrollment_f_asia, na.rm = TRUE),
+    .groups = "drop"
+  )
+enrollment_2013 |>
+  gt() |>
+  fmt_number(columns = -state, decimals = 0)
+
+```
+
+## Enrollment of the Most populous States in the US Year2023
+
+```{r}
+
+enrollment_2023 <- IPEDS |>
+  filter(year == 2023,
+         level == "all undergrad",
+         state %in% c("CA","TX","FL","NY","PA")) |>
+  group_by(state) |>
+  summarize(
+    White    = sum(enrollment_m_whit + enrollment_f_whit, na.rm = TRUE),
+    Black    = sum(enrollment_m_bkaa + enrollment_f_bkaa, na.rm = TRUE),
+    Hispanic = sum(enrollment_m_hisp + enrollment_f_hisp, na.rm = TRUE),
+    Asian    = sum(enrollment_m_asia + enrollment_f_asia, na.rm = TRUE),
+    .groups = "drop"
+  )
+  enrollment_2023 |>
+  gt() |>
+  fmt_number(columns = -state, decimals = 0)
+
+```
+
+## Compare 2013 vs 2023 on Top Five Most Populous States
+
+```{r}
+library(gt)
+
+enrollment_compare <- IPEDS |>
+ filter(year %in% c(2013, 2023),
+        level == "all undergrad",
+        state %in% c("CA","TX","FL","NY","PA")) |>
+ group_by(state, year) |>
+ summarize(
+   White    = sum(enrollment_m_whit + enrollment_f_whit, na.rm = TRUE),
+   Black    = sum(enrollment_m_bkaa + enrollment_f_bkaa, na.rm = TRUE),
+   Hispanic = sum(enrollment_m_hisp + enrollment_f_hisp, na.rm = TRUE),
+   Asian    = sum(enrollment_m_asia + enrollment_f_asia, na.rm = TRUE),
+   .groups = "drop"
+ ) |>
+ pivot_wider(
+   names_from = year,
+   values_from = White:Asian
+ ) |>
+ mutate(
+   White_change    = (White_2023 - White_2013) / White_2013,
+   Black_change    = (Black_2023 - Black_2013) / Black_2013,
+   Hispanic_change = (Hispanic_2023 - Hispanic_2013) / Hispanic_2013,
+   Asian_change    = (Asian_2023 - Asian_2013) / Asian_2013
+ )
+ 
+ enrollment_compare |>
+ gt() |>
+ fmt_number(columns = c(White_2013:Asian_2023), decimals = 0) |>
+ fmt_percent(
+   columns = ends_with("change"),
+   decimals = 1
+ ) |>
+ cols_label(
+   state = "State",
+   White_2013 = "2013",
+   White_2023 = "2023",
+   White_change = "% Change",
+   Black_2013 = "2013",
+   Black_2023 = "2023",
+   Black_change = "% Change",
+   Hispanic_2013 = "2013",
+   Hispanic_2023 = "2023",
+   Hispanic_change = "% Change",
+   Asian_2013 = "2013",
+   Asian_2023 = "2023",
+   Asian_change = "% Change"
+ ) |>
+ tab_spanner(
+   label = "White",
+   columns = c(White_2013, White_2023, White_change)
+ ) |>
+ tab_spanner(
+   label = "Black",
+   columns = c(Black_2013, Black_2023, Black_change)
+ ) |>
+ tab_spanner(
+   label = "Hispanic",
+   columns = c(Hispanic_2013, Hispanic_2023, Hispanic_change)
+ ) |>
+ tab_spanner(
+   label = "Asian",
+   columns = c(Asian_2013, Asian_2023, Asian_change)
+ )
+
+```
+
+## Find Proportion of enrolled Undergrad in Top Five Most Populous States to Total Enrollees of Year2013
+
+```{r}
+  
+total_enrollment_2013 <- IPEDS |>
+  filter(year == 2013,
+         level == "all undergrad") |>
+  summarize(
+    total_students = sum(
+      enrollment_m_whit + enrollment_f_whit +
+      enrollment_m_bkaa + enrollment_f_bkaa +
+      enrollment_m_hisp + enrollment_f_hisp +
+      enrollment_m_asia + enrollment_f_asia,
+      na.rm = TRUE
+    )
+  )
+
+```
+
+```{r}
+state_share_2013 <- IPEDS |>
+  filter(year == 2013,
+         level == "all undergrad") |>
+  mutate(
+    students =
+      enrollment_m_whit + enrollment_f_whit +
+      enrollment_m_bkaa + enrollment_f_bkaa +
+      enrollment_m_hisp + enrollment_f_hisp +
+      enrollment_m_asia + enrollment_f_asia
+  ) |>
+  group_by(state) |>
+  summarize(students = sum(students, na.rm = TRUE), .groups = "drop") |>
+  mutate(share = students / sum(students)) |>
+  filter(state %in% c("CA","FL","NY","PA","TX")) |>
+  arrange(desc(students))
+  
+  state_share_2013 |>
+  gt() |>
+  fmt_number(columns = students, decimals = 0) |>
+  fmt_percent(columns = share, decimals = 1)
+
+```
+
+## Find Proportion of enrolled Undergrad in Top Five Most Populous States to Total Enrollees of Year2023
+
+```{r}
+  
+total_enrollment_2023 <- IPEDS |>
+  filter(year == 2023,
+         level == "all undergrad") |>
+  summarize(
+    total_students = sum(
+      enrollment_m_whit + enrollment_f_whit +
+      enrollment_m_bkaa + enrollment_f_bkaa +
+      enrollment_m_hisp + enrollment_f_hisp +
+      enrollment_m_asia + enrollment_f_asia,
+      na.rm = TRUE
+    )
+  )
+
+state_share_2023 <- IPEDS |>
+  filter(year == 2023,
+         level == "all undergrad") |>
+  mutate(
+    students =
+      enrollment_m_whit + enrollment_f_whit +
+      enrollment_m_bkaa + enrollment_f_bkaa +
+      enrollment_m_hisp + enrollment_f_hisp +
+      enrollment_m_asia + enrollment_f_asia
+  ) |>
+  group_by(state) |>
+  summarize(students = sum(students, na.rm = TRUE), .groups = "drop") |>
+  mutate(share = students / sum(students)) |>
+  filter(state %in% c("CA","FL","NY","PA","TX")) |>
+  arrange(desc(students))
+  
+  state_share_2023 |>
+  gt() |>
+  fmt_number(columns = students, decimals = 0) |>
+  fmt_percent(columns = share, decimals = 1)
+
+```
+
+ANSWERS\
+1. The U.S. Census shows that from 2013 to 2024, the average population of 18-24 years old is approximately at 13.5 million, with averaged racial distribution of :
+
+Non-Hispanic White = 36.5%,\
+Non-Hispanic Black = 13%,\
+Hispanic / Latino = 13%\
+Non-Hispanic Asians = 3%.\
+What observations can we glean from the **US Census** data vs **IPEDS**?
+
+*IPEDS 2013 results of undergrads on the top 5 most populous states show similar pattern of percentage
+distribution of Non-Hispanic Whites and Non-Hispanic Asians. In both IPEDS and
+US Census, these two race ranks the highest and lowest. But by 2023, IPEDS showed a remarkable change with Hispanics moving to 1st place as the most enrolled in CA with over 1 million enrolled. Also in US Census, the overall population of Hispanics and Blacks hover at around 13% each, but there is more disparity of enrolled students between these two groups across the five states.*
+
+![](images/mp-01Answer0.jpg)
+
+2.Compare the 2013 and 2023 undergrad enrollment results of the Top 5 most populous states. What are their proportions to each other?\
+*Over the course of a decade, a negative change occurred on both White and Black, but a relatively positive growth of enrollees for Hispanics and Asians (with Hispanic showing ALL positive increase)*
+
+![](images/mp-01Answer2.jpg)
+
+3.Between 2013 and 2024, what are the major changes in enrollment pattern?
+
+*Remember, the top 5 most populous states has 36.8% (2013) and 37.6%(2024) share of the total enrollment of undergrad in the US. California and Texas showed about 1% increase, while New York, Florida and Pennsylvania decreased over time. Total number of undergrads have also decreased by 10% from 2013 to 2023*
+
+![](images/mp-01Answer1.jpg)
+
+4.  Is IPEDS still relevant?
+
+No, I believe there will be more mixing of races in the years to come. Genetically speaking, people can show traces of black, white or pink. Nevertheless it is fun for analysts to understand how people perceive themselves in numbers is another area to explore.
