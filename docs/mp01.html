@@ -153,12 +153,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="special-proof-to-start-off-this-project-i-would-like-to-take-a-bow-and-declare-that-ive-worked-over-15-hours-on-this-project.-the-initial-codes-were-easy-enough-but-debugging-to-find-out-that-im-simply-missing-one-element-delayed-my-work-for-over-30-minutes-navigating-through-various-icons-require-a-sleepless-in-seattle-moment." class="level3">
 <h3 class="anchored" data-anchor-id="special-proof-to-start-off-this-project-i-would-like-to-take-a-bow-and-declare-that-ive-worked-over-15-hours-on-this-project.-the-initial-codes-were-easy-enough-but-debugging-to-find-out-that-im-simply-missing-one-element-delayed-my-work-for-over-30-minutes-navigating-through-various-icons-require-a-sleepless-in-seattle-moment."><strong>SPECIAL PROOF</strong> To start-off this project, I would like to take a bow and declare that I’ve worked over 15 hours on this project. The initial codes were easy enough but debugging to find out that I’m simply missing “)” one element delayed my work for over 30 minutes, navigating through various icons require a “sleepless in Seattle” moment.</h3>
 <p>Below is a photo of some of my notes to visualize the pattern I must follow. I would gladly, irrevocably and reverently pursue much analysis but my butt suffers from heated chair-sores. I love analysis but now in pursuit to like coding.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="images/mp-01 NOTEBOOK.jpg" class="img-fluid figure-img"></p>
-<figcaption>The NOTEBOOK (not the movie)</figcaption>
-</figure>
-</div>
 <p><strong>OVERVIEW</strong><br>
 Since 1986, the Integrated Postsecondary Education System (IPEDS), administered by the Department of Education, is a mandatory collection of enrolled students and information of which includes the race and sex. Absolutely, all colleges and universities must comply, but by June 2023, the Supreme Court ruled that race can no longer be an admissible factor in college acceptance.</p>
 <p><strong>OBJECTIVE</strong><br>
@@ -315,7 +309,7 @@ What observations can we glean from the US Census data combines with IPEDS?</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a> IPEDS <span class="ot">&lt;-</span> <span class="fu">acquire_ipeds_data</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-✔ dplyr     1.1.4     ✔ readr     2.1.6
+✔ dplyr     1.2.0     ✔ readr     2.1.6
 ✔ forcats   1.0.1     ✔ stringr   1.6.0
 ✔ ggplot2   4.0.1     ✔ tibble    3.3.1
 ✔ lubridate 1.9.4     ✔ tidyr     1.3.2
@@ -376,23 +370,23 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">|&gt;</span></span>
 <span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(<span class="at">columns =</span> <span class="sc">-</span>state, <span class="at">decimals =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div id="pgrwoibspk" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#pgrwoibspk table {
+<div id="uzhxsosqsh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#uzhxsosqsh table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#pgrwoibspk thead, #pgrwoibspk tbody, #pgrwoibspk tfoot, #pgrwoibspk tr, #pgrwoibspk td, #pgrwoibspk th {
+#uzhxsosqsh thead, #uzhxsosqsh tbody, #uzhxsosqsh tfoot, #uzhxsosqsh tr, #uzhxsosqsh td, #uzhxsosqsh th {
   border-style: none;
 }
 
-#pgrwoibspk p {
+#uzhxsosqsh p {
   margin: 0;
   padding: 0;
 }
 
-#pgrwoibspk .gt_table {
+#uzhxsosqsh .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -418,12 +412,12 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_caption {
+#uzhxsosqsh .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#pgrwoibspk .gt_title {
+#uzhxsosqsh .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -435,7 +429,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-width: 0;
 }
 
-#pgrwoibspk .gt_subtitle {
+#uzhxsosqsh .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -447,7 +441,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-top-width: 0;
 }
 
-#pgrwoibspk .gt_heading {
+#uzhxsosqsh .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -459,13 +453,13 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_bottom_border {
+#uzhxsosqsh .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_col_headings {
+#uzhxsosqsh .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -480,7 +474,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_col_heading {
+#uzhxsosqsh .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -500,7 +494,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   overflow-x: hidden;
 }
 
-#pgrwoibspk .gt_column_spanner_outer {
+#uzhxsosqsh .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -512,15 +506,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 4px;
 }
 
-#pgrwoibspk .gt_column_spanner_outer:first-child {
+#uzhxsosqsh .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#pgrwoibspk .gt_column_spanner_outer:last-child {
+#uzhxsosqsh .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#pgrwoibspk .gt_column_spanner {
+#uzhxsosqsh .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -532,11 +526,11 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   width: 100%;
 }
 
-#pgrwoibspk .gt_spanner_row {
+#uzhxsosqsh .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#pgrwoibspk .gt_group_heading {
+#uzhxsosqsh .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -562,7 +556,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   text-align: left;
 }
 
-#pgrwoibspk .gt_empty_group_heading {
+#uzhxsosqsh .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -577,15 +571,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   vertical-align: middle;
 }
 
-#pgrwoibspk .gt_from_md > :first-child {
+#uzhxsosqsh .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#pgrwoibspk .gt_from_md > :last-child {
+#uzhxsosqsh .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#pgrwoibspk .gt_row {
+#uzhxsosqsh .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -604,7 +598,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   overflow-x: hidden;
 }
 
-#pgrwoibspk .gt_stub {
+#uzhxsosqsh .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -617,7 +611,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#pgrwoibspk .gt_stub_row_group {
+#uzhxsosqsh .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -631,15 +625,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   vertical-align: top;
 }
 
-#pgrwoibspk .gt_row_group_first td {
+#uzhxsosqsh .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#pgrwoibspk .gt_row_group_first th {
+#uzhxsosqsh .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#pgrwoibspk .gt_summary_row {
+#uzhxsosqsh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -649,16 +643,16 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#pgrwoibspk .gt_first_summary_row {
+#uzhxsosqsh .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_first_summary_row.thick {
+#uzhxsosqsh .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#pgrwoibspk .gt_last_summary_row {
+#uzhxsosqsh .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -668,7 +662,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_grand_summary_row {
+#uzhxsosqsh .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -678,7 +672,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#pgrwoibspk .gt_first_grand_summary_row {
+#uzhxsosqsh .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -688,7 +682,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_last_grand_summary_row_top {
+#uzhxsosqsh .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -698,11 +692,11 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_striped {
+#uzhxsosqsh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#pgrwoibspk .gt_table_body {
+#uzhxsosqsh .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -711,7 +705,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_footnotes {
+#uzhxsosqsh .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -725,7 +719,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_footnote {
+#uzhxsosqsh .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -734,7 +728,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#pgrwoibspk .gt_sourcenotes {
+#uzhxsosqsh .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -748,7 +742,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#pgrwoibspk .gt_sourcenote {
+#uzhxsosqsh .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -756,72 +750,72 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#pgrwoibspk .gt_left {
+#uzhxsosqsh .gt_left {
   text-align: left;
 }
 
-#pgrwoibspk .gt_center {
+#uzhxsosqsh .gt_center {
   text-align: center;
 }
 
-#pgrwoibspk .gt_right {
+#uzhxsosqsh .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#pgrwoibspk .gt_font_normal {
+#uzhxsosqsh .gt_font_normal {
   font-weight: normal;
 }
 
-#pgrwoibspk .gt_font_bold {
+#uzhxsosqsh .gt_font_bold {
   font-weight: bold;
 }
 
-#pgrwoibspk .gt_font_italic {
+#uzhxsosqsh .gt_font_italic {
   font-style: italic;
 }
 
-#pgrwoibspk .gt_super {
+#uzhxsosqsh .gt_super {
   font-size: 65%;
 }
 
-#pgrwoibspk .gt_footnote_marks {
+#uzhxsosqsh .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#pgrwoibspk .gt_asterisk {
+#uzhxsosqsh .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#pgrwoibspk .gt_indent_1 {
+#uzhxsosqsh .gt_indent_1 {
   text-indent: 5px;
 }
 
-#pgrwoibspk .gt_indent_2 {
+#uzhxsosqsh .gt_indent_2 {
   text-indent: 10px;
 }
 
-#pgrwoibspk .gt_indent_3 {
+#uzhxsosqsh .gt_indent_3 {
   text-indent: 15px;
 }
 
-#pgrwoibspk .gt_indent_4 {
+#uzhxsosqsh .gt_indent_4 {
   text-indent: 20px;
 }
 
-#pgrwoibspk .gt_indent_5 {
+#uzhxsosqsh .gt_indent_5 {
   text-indent: 25px;
 }
 
-#pgrwoibspk .katex-display {
+#uzhxsosqsh .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#pgrwoibspk div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#uzhxsosqsh div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -898,23 +892,23 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
 <span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">|&gt;</span></span>
 <span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(<span class="at">columns =</span> <span class="sc">-</span>state, <span class="at">decimals =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div id="mynxpwfwwu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#mynxpwfwwu table {
+<div id="wepttccmka" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#wepttccmka table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#mynxpwfwwu thead, #mynxpwfwwu tbody, #mynxpwfwwu tfoot, #mynxpwfwwu tr, #mynxpwfwwu td, #mynxpwfwwu th {
+#wepttccmka thead, #wepttccmka tbody, #wepttccmka tfoot, #wepttccmka tr, #wepttccmka td, #wepttccmka th {
   border-style: none;
 }
 
-#mynxpwfwwu p {
+#wepttccmka p {
   margin: 0;
   padding: 0;
 }
 
-#mynxpwfwwu .gt_table {
+#wepttccmka .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -940,12 +934,12 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_caption {
+#wepttccmka .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#mynxpwfwwu .gt_title {
+#wepttccmka .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -957,7 +951,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-width: 0;
 }
 
-#mynxpwfwwu .gt_subtitle {
+#wepttccmka .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -969,7 +963,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-top-width: 0;
 }
 
-#mynxpwfwwu .gt_heading {
+#wepttccmka .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -981,13 +975,13 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_bottom_border {
+#wepttccmka .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_col_headings {
+#wepttccmka .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1002,7 +996,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_col_heading {
+#wepttccmka .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1022,7 +1016,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   overflow-x: hidden;
 }
 
-#mynxpwfwwu .gt_column_spanner_outer {
+#wepttccmka .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1034,15 +1028,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 4px;
 }
 
-#mynxpwfwwu .gt_column_spanner_outer:first-child {
+#wepttccmka .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mynxpwfwwu .gt_column_spanner_outer:last-child {
+#wepttccmka .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mynxpwfwwu .gt_column_spanner {
+#wepttccmka .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1054,11 +1048,11 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   width: 100%;
 }
 
-#mynxpwfwwu .gt_spanner_row {
+#wepttccmka .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#mynxpwfwwu .gt_group_heading {
+#wepttccmka .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1084,7 +1078,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   text-align: left;
 }
 
-#mynxpwfwwu .gt_empty_group_heading {
+#wepttccmka .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1099,15 +1093,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   vertical-align: middle;
 }
 
-#mynxpwfwwu .gt_from_md > :first-child {
+#wepttccmka .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mynxpwfwwu .gt_from_md > :last-child {
+#wepttccmka .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mynxpwfwwu .gt_row {
+#wepttccmka .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1126,7 +1120,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   overflow-x: hidden;
 }
 
-#mynxpwfwwu .gt_stub {
+#wepttccmka .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1139,7 +1133,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#mynxpwfwwu .gt_stub_row_group {
+#wepttccmka .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1153,15 +1147,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   vertical-align: top;
 }
 
-#mynxpwfwwu .gt_row_group_first td {
+#wepttccmka .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#mynxpwfwwu .gt_row_group_first th {
+#wepttccmka .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#mynxpwfwwu .gt_summary_row {
+#wepttccmka .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1171,16 +1165,16 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#mynxpwfwwu .gt_first_summary_row {
+#wepttccmka .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_first_summary_row.thick {
+#wepttccmka .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#mynxpwfwwu .gt_last_summary_row {
+#wepttccmka .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1190,7 +1184,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_grand_summary_row {
+#wepttccmka .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1200,7 +1194,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#mynxpwfwwu .gt_first_grand_summary_row {
+#wepttccmka .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1210,7 +1204,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_last_grand_summary_row_top {
+#wepttccmka .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1220,11 +1214,11 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_striped {
+#wepttccmka .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mynxpwfwwu .gt_table_body {
+#wepttccmka .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1233,7 +1227,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_footnotes {
+#wepttccmka .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1247,7 +1241,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_footnote {
+#wepttccmka .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1256,7 +1250,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#mynxpwfwwu .gt_sourcenotes {
+#wepttccmka .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1270,7 +1264,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#mynxpwfwwu .gt_sourcenote {
+#wepttccmka .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1278,72 +1272,72 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#mynxpwfwwu .gt_left {
+#wepttccmka .gt_left {
   text-align: left;
 }
 
-#mynxpwfwwu .gt_center {
+#wepttccmka .gt_center {
   text-align: center;
 }
 
-#mynxpwfwwu .gt_right {
+#wepttccmka .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mynxpwfwwu .gt_font_normal {
+#wepttccmka .gt_font_normal {
   font-weight: normal;
 }
 
-#mynxpwfwwu .gt_font_bold {
+#wepttccmka .gt_font_bold {
   font-weight: bold;
 }
 
-#mynxpwfwwu .gt_font_italic {
+#wepttccmka .gt_font_italic {
   font-style: italic;
 }
 
-#mynxpwfwwu .gt_super {
+#wepttccmka .gt_super {
   font-size: 65%;
 }
 
-#mynxpwfwwu .gt_footnote_marks {
+#wepttccmka .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#mynxpwfwwu .gt_asterisk {
+#wepttccmka .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#mynxpwfwwu .gt_indent_1 {
+#wepttccmka .gt_indent_1 {
   text-indent: 5px;
 }
 
-#mynxpwfwwu .gt_indent_2 {
+#wepttccmka .gt_indent_2 {
   text-indent: 10px;
 }
 
-#mynxpwfwwu .gt_indent_3 {
+#wepttccmka .gt_indent_3 {
   text-indent: 15px;
 }
 
-#mynxpwfwwu .gt_indent_4 {
+#wepttccmka .gt_indent_4 {
   text-indent: 20px;
 }
 
-#mynxpwfwwu .gt_indent_5 {
+#wepttccmka .gt_indent_5 {
   text-indent: 25px;
 }
 
-#mynxpwfwwu .katex-display {
+#wepttccmka .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#mynxpwfwwu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#wepttccmka div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1468,23 +1462,23 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
 <span id="cb8-62"><a href="#cb8-62" aria-hidden="true" tabindex="-1"></a>   <span class="at">columns =</span> <span class="fu">c</span>(Asian_2013, Asian_2023, Asian_change)</span>
 <span id="cb8-63"><a href="#cb8-63" aria-hidden="true" tabindex="-1"></a> )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div id="jdshpecxoz" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#jdshpecxoz table {
+<div id="yprxlaxezb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#yprxlaxezb table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#jdshpecxoz thead, #jdshpecxoz tbody, #jdshpecxoz tfoot, #jdshpecxoz tr, #jdshpecxoz td, #jdshpecxoz th {
+#yprxlaxezb thead, #yprxlaxezb tbody, #yprxlaxezb tfoot, #yprxlaxezb tr, #yprxlaxezb td, #yprxlaxezb th {
   border-style: none;
 }
 
-#jdshpecxoz p {
+#yprxlaxezb p {
   margin: 0;
   padding: 0;
 }
 
-#jdshpecxoz .gt_table {
+#yprxlaxezb .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1510,12 +1504,12 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-left-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_caption {
+#yprxlaxezb .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#jdshpecxoz .gt_title {
+#yprxlaxezb .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1527,7 +1521,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-width: 0;
 }
 
-#jdshpecxoz .gt_subtitle {
+#yprxlaxezb .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1539,7 +1533,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-top-width: 0;
 }
 
-#jdshpecxoz .gt_heading {
+#yprxlaxezb .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1551,13 +1545,13 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_bottom_border {
+#yprxlaxezb .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_col_headings {
+#yprxlaxezb .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1572,7 +1566,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_col_heading {
+#yprxlaxezb .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1592,7 +1586,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   overflow-x: hidden;
 }
 
-#jdshpecxoz .gt_column_spanner_outer {
+#yprxlaxezb .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1604,15 +1598,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 4px;
 }
 
-#jdshpecxoz .gt_column_spanner_outer:first-child {
+#yprxlaxezb .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#jdshpecxoz .gt_column_spanner_outer:last-child {
+#yprxlaxezb .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#jdshpecxoz .gt_column_spanner {
+#yprxlaxezb .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1624,11 +1618,11 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   width: 100%;
 }
 
-#jdshpecxoz .gt_spanner_row {
+#yprxlaxezb .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#jdshpecxoz .gt_group_heading {
+#yprxlaxezb .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1654,7 +1648,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   text-align: left;
 }
 
-#jdshpecxoz .gt_empty_group_heading {
+#yprxlaxezb .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1669,15 +1663,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   vertical-align: middle;
 }
 
-#jdshpecxoz .gt_from_md > :first-child {
+#yprxlaxezb .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#jdshpecxoz .gt_from_md > :last-child {
+#yprxlaxezb .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#jdshpecxoz .gt_row {
+#yprxlaxezb .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1696,7 +1690,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   overflow-x: hidden;
 }
 
-#jdshpecxoz .gt_stub {
+#yprxlaxezb .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1709,7 +1703,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#jdshpecxoz .gt_stub_row_group {
+#yprxlaxezb .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1723,15 +1717,15 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   vertical-align: top;
 }
 
-#jdshpecxoz .gt_row_group_first td {
+#yprxlaxezb .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#jdshpecxoz .gt_row_group_first th {
+#yprxlaxezb .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#jdshpecxoz .gt_summary_row {
+#yprxlaxezb .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1741,16 +1735,16 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#jdshpecxoz .gt_first_summary_row {
+#yprxlaxezb .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_first_summary_row.thick {
+#yprxlaxezb .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#jdshpecxoz .gt_last_summary_row {
+#yprxlaxezb .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1760,7 +1754,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_grand_summary_row {
+#yprxlaxezb .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1770,7 +1764,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#jdshpecxoz .gt_first_grand_summary_row {
+#yprxlaxezb .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1780,7 +1774,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-top-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_last_grand_summary_row_top {
+#yprxlaxezb .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1790,11 +1784,11 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_striped {
+#yprxlaxezb .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#jdshpecxoz .gt_table_body {
+#yprxlaxezb .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1803,7 +1797,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-bottom-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_footnotes {
+#yprxlaxezb .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1817,7 +1811,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_footnote {
+#yprxlaxezb .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1826,7 +1820,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#jdshpecxoz .gt_sourcenotes {
+#yprxlaxezb .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1840,7 +1834,7 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   border-right-color: #D3D3D3;
 }
 
-#jdshpecxoz .gt_sourcenote {
+#yprxlaxezb .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1848,72 +1842,72 @@ Multiple files in zip: reading 'ef2023a.csv'</code></pre>
   padding-right: 5px;
 }
 
-#jdshpecxoz .gt_left {
+#yprxlaxezb .gt_left {
   text-align: left;
 }
 
-#jdshpecxoz .gt_center {
+#yprxlaxezb .gt_center {
   text-align: center;
 }
 
-#jdshpecxoz .gt_right {
+#yprxlaxezb .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#jdshpecxoz .gt_font_normal {
+#yprxlaxezb .gt_font_normal {
   font-weight: normal;
 }
 
-#jdshpecxoz .gt_font_bold {
+#yprxlaxezb .gt_font_bold {
   font-weight: bold;
 }
 
-#jdshpecxoz .gt_font_italic {
+#yprxlaxezb .gt_font_italic {
   font-style: italic;
 }
 
-#jdshpecxoz .gt_super {
+#yprxlaxezb .gt_super {
   font-size: 65%;
 }
 
-#jdshpecxoz .gt_footnote_marks {
+#yprxlaxezb .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#jdshpecxoz .gt_asterisk {
+#yprxlaxezb .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#jdshpecxoz .gt_indent_1 {
+#yprxlaxezb .gt_indent_1 {
   text-indent: 5px;
 }
 
-#jdshpecxoz .gt_indent_2 {
+#yprxlaxezb .gt_indent_2 {
   text-indent: 10px;
 }
 
-#jdshpecxoz .gt_indent_3 {
+#yprxlaxezb .gt_indent_3 {
   text-indent: 15px;
 }
 
-#jdshpecxoz .gt_indent_4 {
+#yprxlaxezb .gt_indent_4 {
   text-indent: 20px;
 }
 
-#jdshpecxoz .gt_indent_5 {
+#yprxlaxezb .gt_indent_5 {
   text-indent: 25px;
 }
 
-#jdshpecxoz .katex-display {
+#yprxlaxezb .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#jdshpecxoz div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#yprxlaxezb div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -2086,23 +2080,23 @@ Asian
 <span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(<span class="at">columns =</span> students, <span class="at">decimals =</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
 <span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_percent</span>(<span class="at">columns =</span> share, <span class="at">decimals =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div id="dbgqocykqc" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#dbgqocykqc table {
+<div id="wjtfhjhxpy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#wjtfhjhxpy table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#dbgqocykqc thead, #dbgqocykqc tbody, #dbgqocykqc tfoot, #dbgqocykqc tr, #dbgqocykqc td, #dbgqocykqc th {
+#wjtfhjhxpy thead, #wjtfhjhxpy tbody, #wjtfhjhxpy tfoot, #wjtfhjhxpy tr, #wjtfhjhxpy td, #wjtfhjhxpy th {
   border-style: none;
 }
 
-#dbgqocykqc p {
+#wjtfhjhxpy p {
   margin: 0;
   padding: 0;
 }
 
-#dbgqocykqc .gt_table {
+#wjtfhjhxpy .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -2128,12 +2122,12 @@ Asian
   border-left-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_caption {
+#wjtfhjhxpy .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#dbgqocykqc .gt_title {
+#wjtfhjhxpy .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -2145,7 +2139,7 @@ Asian
   border-bottom-width: 0;
 }
 
-#dbgqocykqc .gt_subtitle {
+#wjtfhjhxpy .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -2157,7 +2151,7 @@ Asian
   border-top-width: 0;
 }
 
-#dbgqocykqc .gt_heading {
+#wjtfhjhxpy .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -2169,13 +2163,13 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_bottom_border {
+#wjtfhjhxpy .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_col_headings {
+#wjtfhjhxpy .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2190,7 +2184,7 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_col_heading {
+#wjtfhjhxpy .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2210,7 +2204,7 @@ Asian
   overflow-x: hidden;
 }
 
-#dbgqocykqc .gt_column_spanner_outer {
+#wjtfhjhxpy .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2222,15 +2216,15 @@ Asian
   padding-right: 4px;
 }
 
-#dbgqocykqc .gt_column_spanner_outer:first-child {
+#wjtfhjhxpy .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#dbgqocykqc .gt_column_spanner_outer:last-child {
+#wjtfhjhxpy .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#dbgqocykqc .gt_column_spanner {
+#wjtfhjhxpy .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -2242,11 +2236,11 @@ Asian
   width: 100%;
 }
 
-#dbgqocykqc .gt_spanner_row {
+#wjtfhjhxpy .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#dbgqocykqc .gt_group_heading {
+#wjtfhjhxpy .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2272,7 +2266,7 @@ Asian
   text-align: left;
 }
 
-#dbgqocykqc .gt_empty_group_heading {
+#wjtfhjhxpy .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2287,15 +2281,15 @@ Asian
   vertical-align: middle;
 }
 
-#dbgqocykqc .gt_from_md > :first-child {
+#wjtfhjhxpy .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#dbgqocykqc .gt_from_md > :last-child {
+#wjtfhjhxpy .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#dbgqocykqc .gt_row {
+#wjtfhjhxpy .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2314,7 +2308,7 @@ Asian
   overflow-x: hidden;
 }
 
-#dbgqocykqc .gt_stub {
+#wjtfhjhxpy .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2327,7 +2321,7 @@ Asian
   padding-right: 5px;
 }
 
-#dbgqocykqc .gt_stub_row_group {
+#wjtfhjhxpy .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2341,15 +2335,15 @@ Asian
   vertical-align: top;
 }
 
-#dbgqocykqc .gt_row_group_first td {
+#wjtfhjhxpy .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#dbgqocykqc .gt_row_group_first th {
+#wjtfhjhxpy .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#dbgqocykqc .gt_summary_row {
+#wjtfhjhxpy .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2359,16 +2353,16 @@ Asian
   padding-right: 5px;
 }
 
-#dbgqocykqc .gt_first_summary_row {
+#wjtfhjhxpy .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_first_summary_row.thick {
+#wjtfhjhxpy .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#dbgqocykqc .gt_last_summary_row {
+#wjtfhjhxpy .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2378,7 +2372,7 @@ Asian
   border-bottom-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_grand_summary_row {
+#wjtfhjhxpy .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2388,7 +2382,7 @@ Asian
   padding-right: 5px;
 }
 
-#dbgqocykqc .gt_first_grand_summary_row {
+#wjtfhjhxpy .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2398,7 +2392,7 @@ Asian
   border-top-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_last_grand_summary_row_top {
+#wjtfhjhxpy .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2408,11 +2402,11 @@ Asian
   border-bottom-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_striped {
+#wjtfhjhxpy .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#dbgqocykqc .gt_table_body {
+#wjtfhjhxpy .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2421,7 +2415,7 @@ Asian
   border-bottom-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_footnotes {
+#wjtfhjhxpy .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2435,7 +2429,7 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_footnote {
+#wjtfhjhxpy .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -2444,7 +2438,7 @@ Asian
   padding-right: 5px;
 }
 
-#dbgqocykqc .gt_sourcenotes {
+#wjtfhjhxpy .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2458,7 +2452,7 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#dbgqocykqc .gt_sourcenote {
+#wjtfhjhxpy .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2466,72 +2460,72 @@ Asian
   padding-right: 5px;
 }
 
-#dbgqocykqc .gt_left {
+#wjtfhjhxpy .gt_left {
   text-align: left;
 }
 
-#dbgqocykqc .gt_center {
+#wjtfhjhxpy .gt_center {
   text-align: center;
 }
 
-#dbgqocykqc .gt_right {
+#wjtfhjhxpy .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#dbgqocykqc .gt_font_normal {
+#wjtfhjhxpy .gt_font_normal {
   font-weight: normal;
 }
 
-#dbgqocykqc .gt_font_bold {
+#wjtfhjhxpy .gt_font_bold {
   font-weight: bold;
 }
 
-#dbgqocykqc .gt_font_italic {
+#wjtfhjhxpy .gt_font_italic {
   font-style: italic;
 }
 
-#dbgqocykqc .gt_super {
+#wjtfhjhxpy .gt_super {
   font-size: 65%;
 }
 
-#dbgqocykqc .gt_footnote_marks {
+#wjtfhjhxpy .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#dbgqocykqc .gt_asterisk {
+#wjtfhjhxpy .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#dbgqocykqc .gt_indent_1 {
+#wjtfhjhxpy .gt_indent_1 {
   text-indent: 5px;
 }
 
-#dbgqocykqc .gt_indent_2 {
+#wjtfhjhxpy .gt_indent_2 {
   text-indent: 10px;
 }
 
-#dbgqocykqc .gt_indent_3 {
+#wjtfhjhxpy .gt_indent_3 {
   text-indent: 15px;
 }
 
-#dbgqocykqc .gt_indent_4 {
+#wjtfhjhxpy .gt_indent_4 {
   text-indent: 20px;
 }
 
-#dbgqocykqc .gt_indent_5 {
+#wjtfhjhxpy .gt_indent_5 {
   text-indent: 25px;
 }
 
-#dbgqocykqc .katex-display {
+#wjtfhjhxpy .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#dbgqocykqc div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#wjtfhjhxpy div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -2614,23 +2608,23 @@ Asian
 <span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_number</span>(<span class="at">columns =</span> students, <span class="at">decimals =</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
 <span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_percent</span>(<span class="at">columns =</span> share, <span class="at">decimals =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div id="yheiwbtgvo" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#yheiwbtgvo table {
+<div id="zjmkrtytxx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zjmkrtytxx table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#yheiwbtgvo thead, #yheiwbtgvo tbody, #yheiwbtgvo tfoot, #yheiwbtgvo tr, #yheiwbtgvo td, #yheiwbtgvo th {
+#zjmkrtytxx thead, #zjmkrtytxx tbody, #zjmkrtytxx tfoot, #zjmkrtytxx tr, #zjmkrtytxx td, #zjmkrtytxx th {
   border-style: none;
 }
 
-#yheiwbtgvo p {
+#zjmkrtytxx p {
   margin: 0;
   padding: 0;
 }
 
-#yheiwbtgvo .gt_table {
+#zjmkrtytxx .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -2656,12 +2650,12 @@ Asian
   border-left-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_caption {
+#zjmkrtytxx .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#yheiwbtgvo .gt_title {
+#zjmkrtytxx .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -2673,7 +2667,7 @@ Asian
   border-bottom-width: 0;
 }
 
-#yheiwbtgvo .gt_subtitle {
+#zjmkrtytxx .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -2685,7 +2679,7 @@ Asian
   border-top-width: 0;
 }
 
-#yheiwbtgvo .gt_heading {
+#zjmkrtytxx .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -2697,13 +2691,13 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_bottom_border {
+#zjmkrtytxx .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_col_headings {
+#zjmkrtytxx .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2718,7 +2712,7 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_col_heading {
+#zjmkrtytxx .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2738,7 +2732,7 @@ Asian
   overflow-x: hidden;
 }
 
-#yheiwbtgvo .gt_column_spanner_outer {
+#zjmkrtytxx .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2750,15 +2744,15 @@ Asian
   padding-right: 4px;
 }
 
-#yheiwbtgvo .gt_column_spanner_outer:first-child {
+#zjmkrtytxx .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#yheiwbtgvo .gt_column_spanner_outer:last-child {
+#zjmkrtytxx .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#yheiwbtgvo .gt_column_spanner {
+#zjmkrtytxx .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -2770,11 +2764,11 @@ Asian
   width: 100%;
 }
 
-#yheiwbtgvo .gt_spanner_row {
+#zjmkrtytxx .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#yheiwbtgvo .gt_group_heading {
+#zjmkrtytxx .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2800,7 +2794,7 @@ Asian
   text-align: left;
 }
 
-#yheiwbtgvo .gt_empty_group_heading {
+#zjmkrtytxx .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -2815,15 +2809,15 @@ Asian
   vertical-align: middle;
 }
 
-#yheiwbtgvo .gt_from_md > :first-child {
+#zjmkrtytxx .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#yheiwbtgvo .gt_from_md > :last-child {
+#zjmkrtytxx .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#yheiwbtgvo .gt_row {
+#zjmkrtytxx .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2842,7 +2836,7 @@ Asian
   overflow-x: hidden;
 }
 
-#yheiwbtgvo .gt_stub {
+#zjmkrtytxx .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2855,7 +2849,7 @@ Asian
   padding-right: 5px;
 }
 
-#yheiwbtgvo .gt_stub_row_group {
+#zjmkrtytxx .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -2869,15 +2863,15 @@ Asian
   vertical-align: top;
 }
 
-#yheiwbtgvo .gt_row_group_first td {
+#zjmkrtytxx .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#yheiwbtgvo .gt_row_group_first th {
+#zjmkrtytxx .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#yheiwbtgvo .gt_summary_row {
+#zjmkrtytxx .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2887,16 +2881,16 @@ Asian
   padding-right: 5px;
 }
 
-#yheiwbtgvo .gt_first_summary_row {
+#zjmkrtytxx .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_first_summary_row.thick {
+#zjmkrtytxx .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#yheiwbtgvo .gt_last_summary_row {
+#zjmkrtytxx .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2906,7 +2900,7 @@ Asian
   border-bottom-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_grand_summary_row {
+#zjmkrtytxx .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2916,7 +2910,7 @@ Asian
   padding-right: 5px;
 }
 
-#yheiwbtgvo .gt_first_grand_summary_row {
+#zjmkrtytxx .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2926,7 +2920,7 @@ Asian
   border-top-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_last_grand_summary_row_top {
+#zjmkrtytxx .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2936,11 +2930,11 @@ Asian
   border-bottom-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_striped {
+#zjmkrtytxx .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#yheiwbtgvo .gt_table_body {
+#zjmkrtytxx .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2949,7 +2943,7 @@ Asian
   border-bottom-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_footnotes {
+#zjmkrtytxx .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2963,7 +2957,7 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_footnote {
+#zjmkrtytxx .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -2972,7 +2966,7 @@ Asian
   padding-right: 5px;
 }
 
-#yheiwbtgvo .gt_sourcenotes {
+#zjmkrtytxx .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2986,7 +2980,7 @@ Asian
   border-right-color: #D3D3D3;
 }
 
-#yheiwbtgvo .gt_sourcenote {
+#zjmkrtytxx .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2994,72 +2988,72 @@ Asian
   padding-right: 5px;
 }
 
-#yheiwbtgvo .gt_left {
+#zjmkrtytxx .gt_left {
   text-align: left;
 }
 
-#yheiwbtgvo .gt_center {
+#zjmkrtytxx .gt_center {
   text-align: center;
 }
 
-#yheiwbtgvo .gt_right {
+#zjmkrtytxx .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#yheiwbtgvo .gt_font_normal {
+#zjmkrtytxx .gt_font_normal {
   font-weight: normal;
 }
 
-#yheiwbtgvo .gt_font_bold {
+#zjmkrtytxx .gt_font_bold {
   font-weight: bold;
 }
 
-#yheiwbtgvo .gt_font_italic {
+#zjmkrtytxx .gt_font_italic {
   font-style: italic;
 }
 
-#yheiwbtgvo .gt_super {
+#zjmkrtytxx .gt_super {
   font-size: 65%;
 }
 
-#yheiwbtgvo .gt_footnote_marks {
+#zjmkrtytxx .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#yheiwbtgvo .gt_asterisk {
+#zjmkrtytxx .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#yheiwbtgvo .gt_indent_1 {
+#zjmkrtytxx .gt_indent_1 {
   text-indent: 5px;
 }
 
-#yheiwbtgvo .gt_indent_2 {
+#zjmkrtytxx .gt_indent_2 {
   text-indent: 10px;
 }
 
-#yheiwbtgvo .gt_indent_3 {
+#zjmkrtytxx .gt_indent_3 {
   text-indent: 15px;
 }
 
-#yheiwbtgvo .gt_indent_4 {
+#zjmkrtytxx .gt_indent_4 {
   text-indent: 20px;
 }
 
-#yheiwbtgvo .gt_indent_5 {
+#zjmkrtytxx .gt_indent_5 {
   text-indent: 25px;
 }
 
-#yheiwbtgvo .katex-display {
+#zjmkrtytxx .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#yheiwbtgvo div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#zjmkrtytxx div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -3112,13 +3106,10 @@ Hispanic / Latino = 13%<br>
 Non-Hispanic Asians = 3%.<br>
 What observations can we glean from the <strong>US Census</strong> data vs <strong>IPEDS</strong>?</p>
 <p><em>IPEDS 2013 results of undergrads on the top 5 most populous states show similar pattern of percentage distribution of Non-Hispanic Whites and Non-Hispanic Asians. In both IPEDS and US Census, these two race ranks the highest and lowest. But by 2023, IPEDS showed a remarkable change with Hispanics moving to 1st place as the most enrolled in CA with over 1 million enrolled. Also in US Census, the overall population of Hispanics and Blacks hover at around 13% each, but there is more disparity of enrolled students between these two groups across the five states.</em></p>
-<p><img src="images/mp-01Answer0.jpg" class="img-fluid"></p>
 <p>2.Compare the 2013 and 2023 undergrad enrollment results of the Top 5 most populous states. What are their proportions to each other?<br>
 <em>Over the course of a decade, a negative change occurred on both White and Black, but a relatively positive growth of enrollees for Hispanics and Asians (with Hispanic showing ALL positive increase)</em></p>
-<p><img src="images/mp-01Answer2.jpg" class="img-fluid"></p>
 <p>3.Between 2013 and 2024, what are the major changes in enrollment pattern?</p>
 <p>Remember, the top 5 most populous states has 36.8% (2013) and 37.6%(2024) share of the total enrollment of undergrad in the US. California and Texas showed about 1% increase, while New York, Florida and Pennsylvania decreased over time. Total number of undergrads have also decreased by 10% from 2013 to 2023*</p>
-<p><img src="images/mp-01Answer1.jpg" class="img-fluid"></p>
 <ol start="4" type="1">
 <li>Is IPEDS still relevant?</li>
 </ol>
