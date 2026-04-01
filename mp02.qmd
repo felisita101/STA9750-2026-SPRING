@@ -1,0 +1,1020 @@
+---
+title: "mp02"
+format: 
+  html:
+   theme: cosmo
+   fontsize: 14px
+   mainfont: Arial
+---
+
+```{r}
+
+library(tidyverse)
+library(glue)
+library(readxl)
+library(httr2)
+```
+```{r}
+
+load_atus_data <- function(file_base = c("resp", "rost", "act")){
+    if(!dir.exists(file.path("data", "mp02"))){
+        dir.create(file.path("data", "mp02"), showWarnings=FALSE, recursive=TRUE)
+    }
+    
+    file_base <- match.arg(file_base)
+    
+    file_name_out <- file.path("data", 
+                               "mp02", 
+                               glue("atus{file_base}_0324.dat"))
+        
+    if(!file.exists(file_name_out)){
+        
+        url_end <- glue("atus{file_base}-0324.zip")
+        
+        temp_zip <- tempfile(fileext=".zip")
+        temp_dir <- tools::file_path_sans_ext(temp_zip)
+        
+        request("https://www.bls.gov") |>
+            req_url_path("tus", "datafiles", url_end) |>
+            req_headers(`User-Agent` = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:143.0) Gecko/20100101 Firefox/143.0") |>
+            req_perform(temp_zip)
+    
+        unzip(temp_zip, exdir = temp_dir)
+        
+        temp_file <- file.path(temp_dir, basename(file_name_out))
+        
+        file.copy(temp_file, file_name_out)
+    }
+    
+    file <- read_csv(file_name_out, 
+                     show_col_types = FALSE)
+    
+    switch(file_base, 
+           resp=file |> 
+                  rename(survey_weight = TUFNWGTP, 
+                         time_alone = TRTALONE, 
+                         survey_year = TUYEAR),
+           rost=file |>
+                  mutate(sex = case_match(TESEX, 1 ~ "M", 2 ~ "F")), 
+           act =file |>
+                mutate(activity_n_of_day = TUACTIVITY_N, 
+                       time_spent_min = TUACTDUR24, 
+                       start_time = TUSTARTTIM,
+                       stop_time = TUSTOPTIME, 
+                       level1_code = paste0(TRTIER1P, "0000"), 
+                       level2_code = paste0(TRTIER2P, "00"),
+                       level3_code = TRCODEP) 
+           ) |> 
+                rename(participant_id = TUCASEID) 
+                
+}
+
+load_atus_activities <- function(){
+    if(!dir.exists(file.path("data", "mp02"))){
+        dir.create(file.path("data", "mp02"), showWarnings=FALSE, recursive=TRUE)
+    }
+    
+    dest_file <- file.path("data",
+                           "mp02",
+                           "atus_activity_codes.csv")
+    
+    if(!file.exists(dest_file)){
+        download.file("https://michael-weylandt.com/STA9750/mini/atus_activity_codes.csv", 
+                      quiet=TRUE, 
+                      destfile=dest_file, 
+                      mode="wb")
+    }
+    
+    read_csv(dest_file, show_col_types = FALSE) 
+}
+
+
+
+```
+
+```{r}
+atus_activities <- load_atus_activities()
+atus_resp <- load_atus_data("resp")
+atus_rost <- load_atus_data("rost")
+atus_act  <- load_atus_data("act")
+```
+
+
+# JOINING VARIABLES in ONE TABLE
+
+```{r}
+atus_final <- atus_act |>
+  left_join(
+    atus_resp |> select(participant_id, time_alone),
+    by = "participant_id"
+  ) |>
+  left_join(
+    atus_activities,
+    by = c(
+      "level1_code" = "code_level1",
+      "level2_code" = "code_level2",
+      "level3_code" = "code_level3"
+    )
+  ) |>
+  select(-start_time, -stop_time)
+```
+
+
+
+# TASK 2 Compute Sleeping Activity
+#ANSWER 134479929 minutes
+```{r}
+atus_final |>
+  filter(task_level2 == "Sleeping") |>
+  summarise(total_sleepin = sum(time_spent_min, na.rm = TRUE))
+```
+
+# TASK 2  Compute Females with No Time Alone in 2003
+# ANSWER : 2754 female respondents have zero time alone. 
+
+```{r}
+atus_resp <- atus_resp |>
+  left_join(
+    atus_rost |> select(participant_id, sex),
+    by = join_by(participant_id)
+  ) |>
+  select(participant_id, sex, everything())
+  
+  atus_resp |>
+  filter(
+    sex == "F",
+    time_alone == 0,
+    survey_year == 2003
+  ) |>
+  summarise(count_female = n())
+  
+```  
+
+
+
+
+# TASK 3 Compute >18 of Age in Respondent's Home
+# There are two ways two answer this question. 
+# Using variable TEAGE contains the age of respondent
+# Using variable TRHHCHILD shows the presence of a child in the respondent's home.
+
+# ANSWER with TEAGE : 206252
+# ANSWER with TRHHCHILD : 107584
+```{r}
+atus_rost |>
+  filter(TEAGE < 18) |>
+  summarise(n_under18 = n())
+
+
+atus_resp |>
+  filter(TRHHCHILD == 1) |>
+  summarise(n_with_children = n())
+```
+
+
+# TASK 3 Is the Respondent Married?
+# There is no direct variable to answer this question
+# We can glean from the data if the respondent is married if he/she answers the employment status of his/her spouse. 
+# TESPEMPNOT is the variable thats asks for employment status of spouse. All that responded means they are married. 
+# ANSWER : 135383
+```{r}
+atus_resp |>
+  filter(TESPEMPNOT == 1 | TESPEMPNOT == 2) |>
+  summarise(total = n())
+```
+
+
+# TASK 3 Respondent’s Employment Status
+# Under variable TELFS employment can be classified as
+# 1 Employed Working  - 148458 (ANSWERED)
+# 2 Employed Absent   - 6824 
+# 3 Unemployed Laid Off  -1184 
+# 4 Unemployed Looking  -9501 
+# 5 Not in Labor   - 86841
+```{r}
+atus_resp |>
+  summarise(
+    employed_working   = sum(TELFS == 1, na.rm = TRUE),
+    employed_absent    = sum(TELFS == 2, na.rm = TRUE),
+    unemployed_laid_off = sum(TELFS == 3, na.rm = TRUE),
+    unemployed_looking = sum(TELFS == 4, na.rm = TRUE),
+    not_in_labor       = sum(TELFS == 5, na.rm = TRUE)
+  )
+```
+# TASK 3 Activity Location
+# load_atus_data does not include TEWHERE
+# Downloaded and  unzipped the atusact-0324.zip
+
+# ANSWER Top 10 Location
+# 2095267 (Home or Yard)
+# 907623 (Missing Values)
+# 672364 (in Car, Truck, Motorcycle as driver)
+# 231498 (Respondent’s Workplace)
+# 161397 (Someone Else’s home)
+# 153114 (in Car, Truck, Motorcycle as passenger)
+# 146333 (Other Place)
+# 97664 (Other Store/ Mall)
+# 92900 (Restaurant )
+
+# TASK 3 Is Respondent a College Student?
+# TESCHLVL variable answers if 1= High School 2= College enrolled
+# ANSWER: 12894
+```{r}
+atus_resp |>
+filter(TESCHLVL == 2) |>
+count()
+```
+#  TASK 4 How many different respondents have answered an ATUS survey since 2003?
+
+#  Using Inline Code
+
+```{r}
+number <- atus_resp |> summarise(n = n_distinct(participant_id)) |> pull(n)
+```
+The total is `r number`.
+
+
+#TASK 4 How many different sports does ATUS ask about watching as a “Level 3” task?
+# TRCODEP or Level 3 is pooled into 6-digit activity code
+
+```{r}
+watching <- atus_final |>
+  filter(str_detect(task_level3, "Watching")) |>
+  group_by(task_level3) |>
+  summarise(n = n_distinct(participant_id), .groups = "drop") |>
+  arrange(desc(n))
+
+watching
+```
+# TASK 4: Retired Americans in %
+# TUABSOT variable:  In the last seven days, did you have a job either full or part time? 3- means retired.
+# THINK: the total sample of 252,808 is about 0.07% of the United States population of 340 M in 2024.  About 36 Million Americans are receiving pension in 2024, that’s 10% of the population
+# ANSWER: about 0.20% of the respondents are retired. It shows there are less retired participants in the survey. 
+```{r}
+retired <- atus_resp |>
+  summarize(retired = round(weighted.mean(TUABSOT == 3, w = survey_weight) * 100, 1)) |>
+  pull(retired)
+```
+
+Approximately `r retired`% of Americans are retired.
+
+
+# 4 TASK Average Sleep of Americans, in hours
+```{r}
+beauty_sleep <- atus_final |>
+  filter(task_level2 == "Sleeping") |>
+  group_by(participant_id) |>
+  summarise(total_sleep = sum(time_spent_min), .groups = "drop") |>
+  left_join(atus_resp, by = "participant_id") |>
+  summarise(beauty_sleep = weighted.mean(total_sleep, w = survey_weight) / 60) |>
+  pull(beauty_sleep)
+```
+Americans sleep an average of `r beauty_sleep` hours per night.
+
+# TASK 4 : Average Hours Spent on Childcare 
+# Using level3_code from atus_final, joined data from atus_act 
+ANSWER: 1.95 hours
+```{r}
+babe_care <- atus_final |>
+  filter(str_detect(level3_code, "^0301|^0302|^0303")) |>
+  group_by(participant_id) |>
+  summarise(total_time = sum(time_spent_min), .groups = "drop") |>
+  left_join(atus_resp, by = "participant_id") |>
+  summarise(avg_hours = weighted.mean(total_time, w = survey_weight) / 60)
+```
+Americans with children spend an average of `r babe_care` hours per day on childcare activities.
+
+# Using TRTCC from Respondent file to compare with Activities File
+ANSWER : 1.37 hours
+
+```{r}
+childcare_hours <- atus_resp |>
+  summarise(avg_hours = weighted.mean(TRTCC, w = survey_weight) / 60) |>
+  pull(avg_hours)
+```
+
+Americans with one or more children in the home spend an average of `r round(childcare_hours, 2)` hours per day taking care of their children.
+
+# TASK 5 LAWN MOWERS vs FULL-TIME WORKERS
+
+```{r}
+library(gt)
+atus_final |>
+  left_join(
+    atus_resp |>
+      select(participant_id, TELFS, TRDPFTPT, survey_weight),
+    by = "participant_id"
+  ) |>
+  filter(level3_code %in% c("020501", "020599")) |>
+  mutate(retired = TELFS == 5,
+         full_time = TRDPFTPT == 1) |>
+  group_by(participant_id, retired, full_time, survey_weight) |>
+  summarise(total_min = sum(time_spent_min), .groups = "drop") |>
+  summarise(
+    `Retired` = weighted.mean(total_min[retired],
+                              w = survey_weight[retired],
+                              na.rm = TRUE),
+    `Full-Time Workers` = weighted.mean(total_min[full_time],
+                                        w = survey_weight[full_time],
+                                        na.rm = TRUE)
+  ) |>
+  gt(id = "tab_compare_retired_fulltime") |>
+  cols_label(
+    `Retired` = "Retired",
+    `Full-Time Workers` = "Full-Time Workers"
+  ) |>
+  tab_header(
+    title = "Average Minutes Spent (Selected Activities)"
+  ) |>
+  tab_source_note(md(
+    "Includes activities with `level3_code` 020501 and 020599.  
+    Estimates are weighted using `survey_weight`."
+  ))
+```
+# TASK 5 SOCIAL ACTIVITY COMPARISON BY MARRIED & UNMARRIED GROUP
+#TRSPPRES from atus_resp #1 for married, 2- Unmarried partner , 3- No partner
+time_spent_min + level1_code from atus_final. Code numbers starting with 12 and 13 are for Socializing and Recreational activities from Activity Lexicon 
+
+
+```{r}
+library(gt)
+
+atus_final |>
+  left_join(
+    atus_resp |>
+      select(participant_id, TRSPPRES),
+    by = "participant_id"
+  ) |>
+  filter(str_detect(level1_code, "^12|^13")) |>
+  mutate(partner_status = case_when(
+    TRSPPRES %in% c(1, 2) ~ "With Partner",
+    TRSPPRES == 3         ~ "No Partner"
+  )) |>
+  filter(!is.na(partner_status)) |>
+  group_by(participant_id, partner_status) |>
+  summarise(total_min = sum(time_spent_min), .groups = "drop") |>
+  summarise(
+    `With Partner` = mean(total_min[partner_status == "With Partner"], na.rm = TRUE),
+    `No Partner` = mean(total_min[partner_status == "No Partner"], na.rm = TRUE)
+  ) |>
+  gt(id = "tab_partner_compare") |>
+  cols_label(
+    `With Partner` = "With Partner",
+    `No Partner` = "No Partner"
+  ) |>
+  tab_header(
+    title = md("**Average Minutes Spent (Level 1 Codes 12 & 13)**")
+  ) |>
+  tab_source_note(md(
+    "Partner status is based on `TRSPPRES` (1–2 = *With Partner*, 3 = *No Partner*).  
+    Values represent **unweighted averages**."
+  ))
+```
+# TASK 5 : High Earners and Their Time
+# ATUS Dictionary explains that TELFS variable under the Respondent File with values of 1 or 2 indicate that the respondent is employed.
+# Variable TRERNWA under Respondent File contains Weekly earnings at main job for employed persons
+# PHOTO Average Weekly Earning by Educational Attainment shows an average of $2,000 for the top tier. Therefore, $2,000 per week is a good benchmark for high-earners. 
+```{r}
+high_earners <- atus_final |>
+  left_join(
+    atus_resp |>
+      select(participant_id, TELFS, TRERNWA),
+    by = "participant_id"
+  ) |>
+  filter(TELFS %in% c(1, 2),
+         TRERNWA > 2000) |>
+  group_by(task_level3) |>
+  summarise(n = n(),
+            respondents = n_distinct(participant_id),
+            total_min = sum(time_spent_min, na.rm = TRUE),
+            .groups = "drop") |>
+  arrange(desc(respondents))
+
+high_earners
+```
+
+#TASK 5 : TEWHERE variable (Activity file )asks “where were you during the activity?”
+#14 :Walking ,15: Bus , 16 : Subway/train ,17:  Bicycle ,18 :Boat/ferry.
+#Connect TEWHERE plus task_level3
+
+
+```{r}
+library(gt)
+
+atus_final |>
+  filter(TEWHERE %in% c(15, 16, 17, 18)) |>
+  mutate(where_mode = case_match(
+    TEWHERE,
+    15 ~ "Bus",
+    16 ~ "Subway/Train",
+    17 ~ "Bicycle",
+    18 ~ "Boat/Ferry"
+  )) |>
+  group_by(where_mode, task_level3) |>
+  summarise(respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  group_by(where_mode) |>
+  slice_max(order_by = respondents,
+            n = 5,
+            with_ties = FALSE) |>
+  ungroup() |>
+  arrange(where_mode, desc(respondents)) |>
+  gt(id = "tab_top_travel_tasks") |>
+  cols_label(
+    where_mode = "Transit Mode",
+    task_level3 = "Primary Activity",
+    respondents = "Respondents"
+  ) |>
+  tab_spanner(
+    columns = respondents,
+    label = "Number of Respondents"
+  ) |>
+  tab_header(
+    title = "Top 5 Activities by Transit Mode",
+    subtitle = "Ranked by number of respondents (descending)"
+  ) |>
+  fmt_number(
+    columns = respondents,
+    decimals = 0
+  ) |>
+  tab_source_note(md(
+    "Includes `TEWHERE` codes 15 = *Bus*, 16 = *Subway/Train*, 17 = *Bicycle*, and 18 = *Boat/Ferry*."
+  ))
+```
+
+#TASK 5  MY FAVORITE ACTIVITIES vs OTHERS
+#My favorite: 120303 Television and movies (not religious), 040401 Physical care for non household adults, 130101 Doing aerobics, 120312 Reading for personal interest
+#In 2024, the ages in  Silent Generation is between 79–96, Baby Boom Generation: 61–78, Generation X: 45–60,Millennial Generation: 29–43, and Gen Z: 12–28
+
+```{r}
+library(gt)
+
+favorite_activities <- c("120303", "040401", "130101", "120312")
+
+favorite_labels <- c(
+  "120303" = "Television and movies",
+  "040401" = "Physical care for nonhousehold adults",
+  "130101" = "Doing aerobics",
+  "120312" = "Reading for personal interest"
+)
+
+respondent_generation <- atus_rost |>
+  group_by(participant_id) |>
+  summarise(age = first(TEAGE),
+            .groups = "drop") |>
+  left_join(
+    atus_resp |>
+      select(participant_id, survey_weight),
+    by = "participant_id"
+  ) |>
+  mutate(generation = case_when(
+    age >= 79 & age <= 96 ~ "Silent Generation",
+    age >= 61 & age <= 78 ~ "Baby Boom Generation",
+    age >= 45 & age <= 60 ~ "Generation X",
+    age >= 29 & age <= 43 ~ "Millennial Generation",
+    age >= 12 & age <= 28 ~ "Gen Z"
+  )) |>
+  filter(!is.na(generation)) |>
+  mutate(generation = factor(
+    generation,
+    levels = c(
+      "Silent Generation",
+      "Baby Boom Generation",
+      "Generation X",
+      "Millennial Generation",
+      "Gen Z"
+    )
+  ))
+
+favorite_time <- atus_act |>
+  mutate(favorite_activity = case_match(
+    as.character(level3_code),
+    "120303" ~ "Television and movies",
+    "040401" ~ "Physical care for nonhousehold adults",
+    "130101" ~ "Doing aerobics",
+    "120312" ~ "Reading for personal interest"
+  )) |>
+  filter(!is.na(favorite_activity)) |>
+  group_by(participant_id, favorite_activity) |>
+  summarise(total_min = sum(TUACTDUR24, na.rm = TRUE),
+            .groups = "drop")
+
+respondent_generation |>
+  select(participant_id, generation, survey_weight) |>
+  tidyr::crossing(favorite_activity = unname(favorite_labels)) |>
+  left_join(
+    favorite_time,
+    by = c("participant_id", "favorite_activity")
+  ) |>
+  mutate(total_min = replace_na(total_min, 0)) |>
+  group_by(generation, favorite_activity) |>
+  summarise(avg_hours = weighted.mean(total_min, w = survey_weight) / 60,
+            .groups = "drop") |>
+  pivot_wider(names_from = favorite_activity,
+              values_from = avg_hours) |>
+  arrange(generation) |>
+  gt(id = "tab_favorite_activities_generation") |>
+  cols_label(
+    generation = "Generation",
+    `Television and movies` = "Television and movies",
+    `Physical care for nonhousehold adults` = "Physical care for nonhousehold adults",
+    `Doing aerobics` = "Doing aerobics",
+    `Reading for personal interest` = "Reading for personal interest"
+  ) |>
+  tab_spanner(
+    columns = c(
+      `Television and movies`,
+      `Physical care for nonhousehold adults`,
+      `Doing aerobics`,
+      `Reading for personal interest`
+    ),
+    label = "Average Hours per Day"
+  ) |>
+  tab_header(
+    title = "My Favorite Activities by Generation",
+    subtitle = "Weighted average hours per day"
+  ) |>
+  fmt_number(
+    columns = c(
+      `Television and movies`,
+      `Physical care for nonhousehold adults`,
+      `Doing aerobics`,
+      `Reading for personal interest`
+    ),
+    decimals = 2
+  ) |>
+  tab_source_note(md(
+    "Favorite activities are based on `level3_code` values 120303, 040401, 130101, and 120312.  
+    Generations are assigned directly from `TEAGE`."
+  ))
+```
+
+#TASK 6 : Household Work from SilentGen to GenZs
+#Using variousgeneration cluster, we will use O2 Codes to classify Household works from level2_code
+#To have stronger contrast between bars, scale_fill_brewer to be used
+```{r}
+atus_final |>
+  left_join(
+    atus_rost |>
+      group_by(participant_id) |>
+      summarise(age = first(TEAGE),
+                .groups = "drop"),
+    by = "participant_id"
+  ) |>
+  mutate(generation = case_when(
+    age >= 79 & age <= 96 ~ "SilentGen",
+    age >= 61 & age <= 78 ~ "Baby Boomers",
+    age >= 45 & age <= 60 ~ "Gen X",
+    age >= 29 & age <= 43 ~ "Millennials",
+    age >= 12 & age <= 28 ~ "GenZ"
+  ),
+  household_activity = case_when(
+    str_detect(level2_code, "^0201") ~ "Housework",
+    str_detect(level2_code, "^0202") ~ "Food & Drink Preparation",
+    str_detect(level2_code, "^0203") ~ "Interior Maintenance & Repair",
+    str_detect(level2_code, "^0204") ~ "Exterior Maintenance & Repair",
+    str_detect(level2_code, "^0205") ~ "Lawn, Garden & Houseplants",
+    str_detect(level2_code, "^0206") ~ "Animals & Pets",
+    str_detect(level2_code, "^0207") ~ "Vehicles",
+    str_detect(level2_code, "^0208") ~ "Appliances, Tools & Toys"
+  )) |>
+  filter(!is.na(generation),
+         !is.na(household_activity)) |>
+  group_by(participant_id, generation, household_activity) |>
+  summarise(total_min = sum(time_spent_min, na.rm = TRUE),
+            .groups = "drop") |>
+  group_by(generation, household_activity) |>
+  summarise(avg_min = mean(total_min, na.rm = TRUE),
+            .groups = "drop") |>
+  mutate(generation = factor(
+    generation,
+    levels = c("SilentGen",
+               "Baby Boomers",
+               "Gen X",
+               "Millennials",
+               "GenZ")
+  )) |>
+  ggplot(aes(x = generation,
+             y = avg_min,
+             fill = household_activity)) +
+  scale_fill_manual(values = c(
+  "Housework" = "#1b9e77",
+  "Food & Drink Preparation" = "#d95f02",
+  "Interior Maintenance & Repair" = "#7570b3",
+  "Exterior Maintenance & Repair" = "#e7298a",
+  "Lawn, Garden & Houseplants" = "#66a61e",
+  "Animals & Pets" = "#e6ab02",
+  "Vehicles" = "#a6761d",
+  "Appliances, Tools & Toys" = "#666666"
+))+ 
+  geom_col(position = "dodge") +
+  labs(
+    title = "Household Work from SilentGen to GenZs",
+    x = "Generation",
+    y = "Average Minutes per Day",
+    fill = "Household Activity"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+```
+
+
+#TASK 6 Summer Fun
+# https://www.bls.gov/tus/iocodes/census18ocodes.pdf
+#TEIO1OCD under Respondent File with Occupational Code starting “2002”  pertains Educational, guidance, and career counselors and advisors
+#TUMONTH under Respondent File to filter months of June, July and August
+#TASKLEVEL_3 under combined dataset atus_final for specific activities
+
+
+```{r}
+summer_educators <- atus_resp |>
+  filter(str_detect(as.character(TEIO1OCD), "^2002"),
+         TUMONTH %in% c(6, 7, 8)) |>
+  select(participant_id, TUMONTH)
+
+top_summer_activities <- atus_final |>
+  inner_join(
+    summer_educators,
+    by = "participant_id"
+  ) |>
+  group_by(task_level3) |>
+  summarise(respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  slice_max(order_by = respondents,
+            n = 10,
+            with_ties = FALSE)
+
+atus_final |>
+  inner_join(
+    summer_educators,
+    by = "participant_id"
+  ) |>
+  semi_join(
+    top_summer_activities,
+    by = "task_level3"
+  ) |>
+  mutate(month = case_match(
+    TUMONTH,
+    6 ~ "June",
+    7 ~ "July",
+    8 ~ "August"
+  ),
+  month = factor(month,
+                 levels = c("June", "July", "August"))) |>
+  group_by(month, task_level3) |>
+  summarise(respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  ggplot(aes(x = month,
+             y = respondents,
+             fill = task_level3)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Summer Fun for Educators",
+    subtitle = "Top 10 summer activities by educators on vacay",
+    x = "Month",
+    y = "Number of Respondents",
+    fill = "Activity"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+#TASK 6 : 
+#TESCHLVL under Respondent File.  “1” = enrolled in college/university. 
+#TEAGE for age. Group age by 18-25, 26- 30, 30-50
+#level2_code under atus_final . code starting 0601 : Taking Classes, 0602: Extracurricular Activities (no sports), 0603 :Research/Homework, 0604: Registration/Admin Activities, 0699: Other activities
+
+
+```{r}
+atus_resp |>
+  filter(TESCHLVL == 1) |>
+  select(participant_id) |>
+  inner_join(
+    atus_rost |>
+      group_by(participant_id) |>
+      summarise(TEAGE = first(TEAGE),
+                .groups = "drop") |>
+      mutate(age_group = case_when(
+        TEAGE >= 18 & TEAGE <= 25 ~ "18-25",
+        TEAGE >= 26 & TEAGE <= 30 ~ "26-30",
+        TEAGE >= 31 & TEAGE <= 50 ~ "31-50"
+      )) |>
+      filter(!is.na(age_group)),
+    by = "participant_id"
+  ) |>
+  inner_join(
+    atus_final |>
+      mutate(education_activity = case_when(
+        str_detect(level2_code, "^0601") ~ "Taking Classes",
+        str_detect(level2_code, "^0602") ~ "Extracurricular Activities",
+        str_detect(level2_code, "^0603") ~ "Research/Homework",
+        str_detect(level2_code, "^0604") ~ "Registration/Admin Activities",
+        str_detect(level2_code, "^0699") ~ "Other Activities"
+      )) |>
+      filter(!is.na(education_activity)) |>
+      select(participant_id, education_activity),
+    by = "participant_id"
+  ) |>
+  group_by(age_group, education_activity) |>
+  summarise(respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  mutate(age_group = factor(age_group,
+                            levels = c("18-25", "26-30", "31-50"))) |>
+  ggplot(aes(x = age_group,
+             y = respondents,
+             fill = education_activity)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Who Studies Seriously?",
+    subtitle = "A classification of college enrolled student by age group & their educational activities",
+    x = "Age Group",
+    y = "Number of Unique Respondents",
+    fill = "Educational Activity"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+
+```{r}
+library(ggbump)
+
+sports_rank <- atus_final |>
+  filter(str_detect(level2_code, "^1301")) |>
+  inner_join(
+    atus_rost |>
+      group_by(participant_id) |>
+      summarise(TEAGE = first(TEAGE),
+                .groups = "drop") |>
+      mutate(generation = case_when(
+        TEAGE >= 45 & TEAGE <= 60 ~ "Gen X",
+        TEAGE >= 29 & TEAGE <= 43 ~ "Millennials",
+        TEAGE >= 12 & TEAGE <= 28 ~ "GenZ"
+      )) |>
+      filter(!is.na(generation)),
+    by = "participant_id"
+  ) |>
+  group_by(generation, task_level3) |>
+  summarise(respondents = n_distinct(participant_id),
+            .groups = "drop")
+
+top_sports <- sports_rank |>
+  group_by(task_level3) |>
+  summarise(total = sum(respondents),
+            .groups = "drop") |>
+  slice_max(order_by = total,
+            n = 10,
+            with_ties = FALSE)
+
+plot_data <- sports_rank |>
+  semi_join(top_sports, by = "task_level3") |>
+  group_by(generation) |>
+  mutate(rank = min_rank(desc(respondents)),
+         generation = factor(
+           generation,
+           levels = c("Gen X", "Millennials", "GenZ")
+         )) |>
+  ungroup()
+
+total_n <- plot_data |>
+  summarise(n = n_distinct(task_level3)) |>   
+  pull(n)
+
+plot_data |>
+  ggplot(aes(x = generation,
+             y = rank,
+             color = task_level3,
+             group = task_level3)) +
+  geom_bump(size = 1.2, smooth = 6) +
+  geom_point(size = 3) +
+  scale_y_reverse() +
+  labs(
+    title = "Changing Interest in Sports by Generation",
+    subtitle = paste("Top sports ranked across", total_n, "activities"),
+    x = "Generation",
+    y = "Rank",
+    color = "Sport"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+# TASK 6 : CHILDCARE & NUMBER of KIDS
+# TRTHH. Total time spent during diary day providing secondary childcare for household children < 13 (in minutes). 
+
+#TRCHILDNUM. Number of household children < 18. The idea is to tie these two variables and observe if the time spent on childcare varies by the number of children in the household. 
+
+```{r}
+childcare_plot <- atus_resp |>
+  select(participant_id, TRCHILDNUM, TRTHH) |>
+  mutate(child_group = case_when(
+    TRCHILDNUM == 1 ~ "1 child",
+    TRCHILDNUM == 3 ~ "3 children",
+    TRCHILDNUM >= 4 & TRCHILDNUM <= 6 ~ "4-6 children",
+    TRCHILDNUM >= 7 & TRCHILDNUM <= 10 ~ "7-10 children"
+  )) |>
+  filter(!is.na(child_group),
+         !is.na(TRTHH)) |>
+  group_by(child_group) |>
+  summarise(avg_hours = mean(TRTHH, na.rm = TRUE) / 60,
+            respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  mutate(child_group = factor(
+    child_group,
+    levels = c("1 child", "3 children", "4-6 children", "7-10 children")
+  ))
+
+childcare_plot |>
+  ggplot(aes(x = child_group,
+             y = avg_hours)) +
+  geom_col() +
+  labs(
+    title = "Secondary Childcare Time by Number of Household Children",
+    subtitle = "Average hours per day spent providing secondary childcare",
+    x = "Number of Household Children",
+    y = "Average Hours",
+    caption = paste("Unique respondents:", sum(childcare_plot$respondents))
+  ) +
+  theme_bw()
+```
+# Secondary childcare is defined as the time when respondent spent having a child under the age of 13 "in their care" while engaged in a different primary activity. This graph make sense because many 'other' activities as the number of household children increases. 
+
+#PART 2 of Task 6 on Childcare with Number of Children
+# In this scenario, we will use task_level 21 to identify Caring for Household Children and match the hours spent by the groupings of 1 child, 3 children, 4-6, and 7-10. 
+```{r}
+atus_final |>
+  filter(task_level2 == "Caring for and Helping Household Children") |>
+  group_by(participant_id) |>
+  summarise(total_min = sum(time_spent_min, na.rm = TRUE),
+            .groups = "drop") |>
+  inner_join(
+    atus_resp |>
+      select(participant_id, TRCHILDNUM) |>
+      mutate(child_group = case_when(
+        TRCHILDNUM == 1 ~ "1 child",
+        TRCHILDNUM == 3 ~ "3 children",
+        TRCHILDNUM >= 4 & TRCHILDNUM <= 6 ~ "4-6 children",
+        TRCHILDNUM >= 7 & TRCHILDNUM <= 10 ~ "7-10 children"
+      )) |>
+      filter(!is.na(child_group)),
+    by = "participant_id"
+  ) |>
+  group_by(child_group) |>
+  summarise(avg_hours = mean(total_min, na.rm = TRUE) / 60,
+            respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  mutate(child_group = factor(
+    child_group,
+    levels = c("1 child", "3 children", "4-6 children", "7-10 children")
+  )) |>
+  ggplot(aes(x = child_group,
+             y = avg_hours,
+             fill = child_group)) +
+  geom_col() +
+  geom_text(aes(label = respondents),
+            vjust = -0.3) +
+  scale_fill_brewer(type = "qual", palette = "Set2") +
+  labs(
+    title = "Time Spent Caring for Household Children",
+    subtitle = "Average hours per day by number of household children",
+    x = "Number of Household Children",
+    y = "Average Hours",
+    fill = "Household Type",
+    caption = "**Numbers above bars show unique respondents"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+# Final Deliverable is FINAL
+# My target market are Senior Citizens. There are two age groups in the twilight years that I'm extremely familiar about : 60-70 years, this group is mostly retired but with perpective on how to manage their time well. 70-90 is the group that could possibly have a solid perspective on how to maximize their time. Categorizing their activities into three: Working, Socializing & Relaxing and Volunteering. 
+```{r}
+app_compare <- atus_final |>
+  inner_join(
+    atus_rost |>
+      group_by(participant_id) |>
+      summarise(TEAGE = first(TEAGE),
+                .groups = "drop") |>
+      mutate(age_group = case_when(
+        TEAGE >= 60 & TEAGE <= 70 ~ "60-70",
+        TEAGE >= 71 & TEAGE <= 90 ~ "70-90"
+      )) |>
+      filter(!is.na(age_group)),
+    by = "participant_id"
+  ) |>
+  mutate(activity_group = case_when(
+    str_detect(level1_code, "^05") ~ "Working",
+    str_detect(level1_code, "^15") ~ "Volunteering",
+    str_detect(level1_code, "^12") ~ "Socializing and Relaxing"
+    
+  )) |>
+  filter(!is.na(activity_group)) |>
+  group_by(participant_id, age_group, activity_group) |>
+  summarise(total_min = sum(time_spent_min, na.rm = TRUE),
+            .groups = "drop") |>
+  group_by(age_group, activity_group) |>
+  summarise(avg_hours = mean(total_min, na.rm = TRUE) / 60,
+            respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  mutate(age_group = factor(age_group,
+                            levels = c("60-70", "70-90")))
+
+app_compare |>
+  ggplot(aes(x = age_group,
+             y = avg_hours,
+             fill = activity_group)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Average Time Use for Pre-Retirement and Retired Seniors",
+    subtitle = "Working, socializing, and medical care services by age group",
+    x = "Age Group",
+    y = "Average Hours per Day",
+    fill = "Activity Group",
+    caption = "Based on unique participant_id"
+  ) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+# TYPICAL HOURS SPENT BY SENIORS ACCORDING TO ACTIVITIES
+```{r}
+avg_time <- atus_final |>
+  inner_join(
+    atus_rost |>
+      group_by(participant_id) |>
+      summarise(TEAGE = first(TEAGE),
+                .groups = "drop") |>
+      mutate(age_group = case_when(
+        TEAGE >= 60 & TEAGE <= 70 ~ "60-70",
+        TEAGE >= 71 & TEAGE <= 90 ~ "70-90"
+      )) |>
+      filter(!is.na(age_group)),
+    by = "participant_id"
+  ) |>
+  mutate(activity_group = case_when(
+    str_detect(level1_code, "^05") ~ "Working",
+    str_detect(level1_code, "^12") ~ "Socializing & Relaxing",
+    str_detect(level2_code, "^15") ~ "Volunteering"
+  )) |>
+  filter(!is.na(activity_group)) |>
+  group_by(participant_id, age_group, activity_group) |>
+  summarise(total_min = sum(time_spent_min, na.rm = TRUE),
+            .groups = "drop") |>
+  group_by(age_group, activity_group) |>
+  summarise(avg_hours = mean(total_min, na.rm = TRUE) / 60,
+            respondents = n_distinct(participant_id),
+            .groups = "drop") |>
+  arrange(age_group, activity_group)
+
+avg_time
+```
+
+#TYPICAL vs TARGET
+
+```{r}
+library(gt)
+
+benchmark <- tibble(
+  activity = c("Working", "Socializing & Relaxing", "Volunteering"),
+  
+  #Target 
+  Low = c("0", "2", "0"),
+  Medium = c("2–4", "4–6", "1"),
+  High = c("6–8", "7–9", "2–3"),
+  
+  #Typical 
+  `Typical Hours` = c("6", "7", "2.5")
+)
+
+benchmark |>
+  gt(id = "tab_target_vs_typical") |>
+  cols_label(
+    activity = "Activity"
+  ) |>
+  tab_spanner(
+    columns = c(Low, Medium, High),
+    label = "Target (Age 60–90)"
+  ) |>
+  tab_spanner(
+    columns = `Typical Hours`,
+    label = "Typical (Observed)"
+  ) |>
+  tab_header(
+    title = md("**Target vs Typical Hours**"),
+    subtitle = "CDC Recommendation and finalized averages from dataset"
+  ) |>
+  cols_align(
+    align = "center",
+    everything()
+  ) |>
+  tab_source_note(md(
+    "Target ranges represent recommended healthy time allocation for ages 60–90.  
+    Typical hours are derived from ATUS-based averages."
+  ))
+```
+
+::: {.callout-note collapse="true"}
+# AI USAGE STATEMENT
+
+I used ChatGPT to help revise, debug, and improve my R code throughout this mini-project, particularly in structuring pipelines, resolving errors, and refining visualizations. While AI assisted with technical implementation and syntax, I relied on my own logical and theoretical plus, mind you, scientific reasoning to formulate the research questions, design the analysis, and interpret the results. I made independent decisions about variable selection, grouping strategies, and how to present findings. Overall,  AI helped me to recycle codes just as its often done in programming in the 1990s.  THANK YOU. 
+:::
+
