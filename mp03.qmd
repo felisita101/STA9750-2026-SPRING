@@ -1,0 +1,2283 @@
+---
+title: "mp03"
+---
+
+install.packages("tidycensus")
+
+## library
+
+```{r}
+library(tidycensus)
+library(gt)
+```
+
+## NY Income
+
+```{r}
+library(tidycensus)
+library(tidyverse)
+library(gt)
+
+ny_income <- get_acs(
+    c(median_household_income = "B19013_001"), 
+    state = "NY", 
+    geography = "county", 
+    year = 2018, 
+    survey = "acs1"
+) |>
+  arrange(desc(estimate))
+
+ny_income
+```
+##2015-2024 STATE POPULATION
+
+```{r}
+library(tidyverse)
+library(glue)
+library(tidycensus)
+
+load_state_population <- function(){
+    
+    if(!dir.exists(file.path("data", "mp03"))){
+        dir.create(file.path("data", "mp03"), showWarnings = FALSE, recursive = TRUE)
+    }
+    
+    # Explicit years (skip 2020)
+    years <- c(2015:2019, 2021:2024)
+    
+    all_data <- list()
+    
+    for(yr in years){
+        
+        dest_file <- file.path(
+            "data",
+            "mp03",
+            glue("state_population_{yr}.csv")
+        )
+        
+        if(!file.exists(dest_file)){
+            temp <- get_acs(
+                variables = c(total_population = "B01003_001"),
+                geography = "state",
+                year = yr,
+                survey = "acs1"
+            ) |>
+                transmute(
+                    State = NAME,
+                    Year = yr,
+                    `Total Population` = estimate
+                )
+            
+            write_csv(temp, dest_file)
+        }
+        
+        all_data[[as.character(yr)]] <- read_csv(dest_file, show_col_types = FALSE)
+    }
+    
+    bind_rows(all_data)
+}
+
+state_population <- load_state_population() |>
+  arrange(Year, desc(`Total Population`))
+
+state_population
+```
+
+## TASK 2: Data Quisition 2024 State-to-State Migration File 
+
+
+
+## This table shows the 50 states and new residents that moved. Florida, the sunshine state, tops the number one with new residents.
+```{r}
+library(tidyverse)
+library(readxl)
+
+state_to_state_migration_2024 <- function(){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2024.xlsx"
+    )
+    
+    state_lookup <- tibble(Current_Residence = state.name)
+    
+    read_excel(
+        file_name,
+        sheet = "Table",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            Current_Residence = ...1,
+            Residence_1_Year_Ago = ...2,
+            Estimate = ...3
+        ) |>
+        fill(Current_Residence) |>
+        filter(
+            !is.na(Current_Residence),
+            !is.na(Residence_1_Year_Ago),
+            Current_Residence != "Current Residence",
+            Residence_1_Year_Ago != "Residence 1 year ago",
+            !str_detect(Residence_1_Year_Ago, "Non-moving"),
+            Estimate != "X"
+        ) |>
+        mutate(
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                TRUE ~ as.character(Estimate)
+            ),
+            Estimate = readr::parse_number(Estimate)
+        ) |>
+        filter(!is.na(Estimate)) |>
+        inner_join(state_lookup, by = "Current_Residence") |>
+        inner_join(
+            tibble(Residence_1_Year_Ago = state.name),
+            by = "Residence_1_Year_Ago"
+        ) |>
+        group_by(Current_Residence) |>
+        summarize(
+            `Movers to Current Residence` = sum(Estimate, na.rm = TRUE),
+            .groups = "drop"
+        ) |>
+        arrange(desc(`Movers to Current Residence`))
+}
+
+migration_totals <- state_to_state_migration_2024()
+
+migration_totals
+```
+
+## Supplemental Table shows residents that did NOT move. 
+```{r}
+library(tidyverse)
+library(readxl)
+
+stationary_population_2024 <- function(state_name = NULL){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2024.xlsx"
+    )
+    
+    read_excel(
+        file_name,
+        sheet = "Supplemental - Current Res",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Estimate = ...2
+        ) |>
+        filter(
+            !is.na(State),
+            State != "Current Residence",
+            Estimate != "X"
+        ) |>
+        mutate(
+            Estimate = readr::parse_number(as.character(Estimate))
+        ) |>
+        filter(!is.na(Estimate)) |>
+        (\(x){
+            if(is.null(state_name)){
+                x
+            } else {
+                filter(x, State == state_name)
+            }
+        })() |>
+        arrange(desc(Estimate))
+}
+
+stationary_population <- stationary_population_2024()
+
+stationary_population
+```
+
+## Binding the Table and Supplement
+```{r}
+library(tidyverse)
+library(readxl)
+
+state_to_state_migration_2024 <- function(){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2024.xlsx"
+    )
+    
+    state_lookup <- tibble(State = state.name)
+    
+    movers <- read_excel(
+        file_name,
+        sheet = "Table",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Residence_1_Year_Ago = ...2,
+            Estimate = ...3
+        ) |>
+        fill(State) |>
+        filter(
+            !is.na(State),
+            !is.na(Residence_1_Year_Ago),
+            State != "Current Residence",
+            Residence_1_Year_Ago != "Residence 1 year ago",
+            !str_detect(Residence_1_Year_Ago, "Non-moving"),
+            Estimate != "X"
+        ) |>
+        mutate(
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                TRUE ~ as.character(Estimate)
+            ),
+            Estimate = readr::parse_number(Estimate)
+        ) |>
+        filter(!is.na(Estimate)) |>
+        inner_join(state_lookup, by = "State") |>
+        inner_join(
+            tibble(Residence_1_Year_Ago = state.name),
+            by = "Residence_1_Year_Ago"
+        )
+    
+    stationary <- read_excel(
+        file_name,
+        sheet = "Supplemental - Current Res",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Estimate = ...2
+        ) |>
+        filter(
+            !is.na(State),
+            State != "Current Residence",
+            Estimate != "X"
+        ) |>
+        mutate(
+            Residence_1_Year_Ago = State,
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                TRUE ~ as.character(Estimate)
+            ),
+            Estimate = readr::parse_number(Estimate)
+        ) |>
+        filter(!is.na(Estimate)) |>
+        inner_join(state_lookup, by = "State") |>
+        select(State, Residence_1_Year_Ago, Estimate)
+    
+    bind_rows(movers, stationary)
+}
+
+migration_2024 <- state_to_state_migration_2024()
+
+migration_2024_compare <- migration_2024
+
+migration_2024_matrix <- migration_2024 |>
+    pivot_wider(
+        names_from = Residence_1_Year_Ago,
+        values_from = Estimate,
+        values_fill = 0
+    )
+
+migration_2024_matrix
+```
+
+## TASK 2 Data Acquisition of 2023 State-to-State Migration
+
+```{r}
+library(httr2)
+
+mp03_dir <- file.path("data", "mp03")
+
+if(!dir.exists(mp03_dir)){
+  dir.create(mp03_dir, recursive = TRUE)
+}
+
+dest_file <- file.path(
+  mp03_dir,
+  "state_to_state_migration_2023.xlsx"
+)
+
+if(!file.exists(dest_file)){
+  request("https://www2.census.gov") |>
+    req_url_path(
+      "programs-surveys",
+      "demo",
+      "tables",
+      "geographic-mobility",
+      "2023",
+      "state-to-state-migration",
+      "State_to_State_Migration_Table_2023_T13.xlsx"
+    ) |>
+    req_perform(dest_file)
+}
+
+dest_file
+```
+```{r}
+library(tidyverse)
+library(readxl)
+library(httr2)
+
+mp03_dir <- file.path("data", "mp03")
+
+if(!dir.exists(mp03_dir)){
+    dir.create(mp03_dir, recursive = TRUE, showWarnings = FALSE)
+}
+
+dest_file <- file.path(
+    mp03_dir,
+    "state_to_state_migration_2023.xlsx"
+)
+
+if(!file.exists(dest_file)){
+    request("https://www2.census.gov") |>
+        req_url_path(
+            "programs-surveys",
+            "demo",
+            "tables",
+            "geographic-mobility",
+            "2023",
+            "state-to-state-migration",
+            "State_to_State_Migration_Table_2023_T13.xlsx"
+        ) |>
+        req_perform(dest_file)
+}
+
+state_to_state_migration_2023 <- function(){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2023.xlsx"
+    )
+    
+    states_with_dc <- c(
+        state.name[1:8],
+        "District of Columbia",
+        state.name[9:50]
+    )
+    
+    stationary <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "A12:H62",
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Population_1_Year_And_Over = ...2,
+            Same_Residence_1_Year_Ago = ...4,
+            Same_State_1_Year_Ago = ...6
+        ) |>
+        inner_join(
+            tibble(State = state.name),
+            by = "State"
+        ) |>
+        mutate(
+            Population_1_Year_And_Over = as.character(Population_1_Year_And_Over),
+            Same_Residence_1_Year_Ago = as.character(Same_Residence_1_Year_Ago),
+            Same_State_1_Year_Ago = as.character(Same_State_1_Year_Ago),
+            Population_1_Year_And_Over = case_when(
+                Population_1_Year_And_Over == "N" ~ "0",
+                Population_1_Year_And_Over == "N/A" ~ "0",
+                TRUE ~ Population_1_Year_And_Over
+            ),
+            Same_Residence_1_Year_Ago = case_when(
+                Same_Residence_1_Year_Ago == "N" ~ "0",
+                Same_Residence_1_Year_Ago == "N/A" ~ "0",
+                TRUE ~ Same_Residence_1_Year_Ago
+            ),
+            Same_State_1_Year_Ago = case_when(
+                Same_State_1_Year_Ago == "N" ~ "0",
+                Same_State_1_Year_Ago == "N/A" ~ "0",
+                TRUE ~ Same_State_1_Year_Ago
+            ),
+            Population_1_Year_And_Over = readr::parse_number(Population_1_Year_And_Over),
+            Same_Residence_1_Year_Ago = readr::parse_number(Same_Residence_1_Year_Ago),
+            Same_State_1_Year_Ago = readr::parse_number(Same_State_1_Year_Ago),
+            Population_1_Year_And_Over = as.integer(Population_1_Year_And_Over),
+            Same_Residence_1_Year_Ago = as.integer(Same_Residence_1_Year_Ago),
+            Same_State_1_Year_Ago = as.integer(Same_State_1_Year_Ago),
+            State_1_Year_Ago = State,
+            Estimate = Same_State_1_Year_Ago
+        ) |>
+        select(
+            State,
+            State_1_Year_Ago,
+            Estimate,
+            Population_1_Year_And_Over,
+            Same_Residence_1_Year_Ago,
+            Same_State_1_Year_Ago
+        )
+    
+    flows <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "J12:DG62",
+        col_names = vctrs::vec_interleave(states_with_dc, NA_character_)
+    ) |>
+        select(any_of(states_with_dc)) |>
+        mutate(State = states_with_dc) |>
+        pivot_longer(
+            cols = -State,
+            names_to = "State_1_Year_Ago",
+            values_to = "Estimate"
+        ) |>
+        filter(
+            State != "District of Columbia",
+            State_1_Year_Ago != "District of Columbia",
+            State != State_1_Year_Ago
+        ) |>
+        inner_join(
+            tibble(State = state.name),
+            by = "State"
+        ) |>
+        inner_join(
+            tibble(State_1_Year_Ago = state.name),
+            by = "State_1_Year_Ago"
+        ) |>
+        mutate(
+            Estimate = as.character(Estimate),
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                Estimate == "N/A" ~ "0",
+                TRUE ~ Estimate
+            ),
+            Estimate = readr::parse_number(Estimate),
+            Estimate = replace_na(Estimate, 0),
+            Estimate = as.integer(Estimate),
+            Population_1_Year_And_Over = NA_integer_,
+            Same_Residence_1_Year_Ago = NA_integer_,
+            Same_State_1_Year_Ago = NA_integer_
+        ) |>
+        select(
+            State,
+            State_1_Year_Ago,
+            Estimate,
+            Population_1_Year_And_Over,
+            Same_Residence_1_Year_Ago,
+            Same_State_1_Year_Ago
+        )
+    
+    bind_rows(flows, stationary) |>
+        arrange(State, State_1_Year_Ago)
+}
+
+migration_2023 <- state_to_state_migration_2023()
+
+nrow(migration_2023)
+
+migration_2023
+```
+
+## Task 3 : Data Acquisition of 2024 State-to-State Migration
+
+#2024 Population
+```{r}
+library(tidyverse)
+library(readr)
+library(glue)
+
+if(!dir.exists(file.path("data", "mp03"))){
+    dir.create(file.path("data", "mp03"), showWarnings = FALSE, recursive = TRUE)
+}
+
+years <- c(2015:2019, 2021:2024)
+
+all_data <- list()
+
+for(yr in years){
+    
+    dest_file <- file.path(
+        "data",
+        "mp03",
+        glue("state_population_{yr}.csv")
+    )
+    
+    all_data[[as.character(yr)]] <- read_csv(
+        dest_file,
+        show_col_types = FALSE
+    )
+}
+
+state_population <- bind_rows(all_data)
+
+population_2024 <- state_population |>
+    filter(Year == 2024) |>
+    select(
+        State,
+        Population = `Total Population`
+    )
+
+migration_2023_wide <- migration_2023 |>
+    rename(
+        Residence_1_Year_Ago = State_1_Year_Ago,
+        `2023 Estimate` = Estimate
+    ) |>
+    select(
+        State,
+        Residence_1_Year_Ago,
+        `2023 Estimate`
+    )
+
+migration_2024_wide <- migration_2024 |>
+    rename(
+        `2024 Estimate` = Estimate
+    ) |>
+    select(
+        State,
+        Residence_1_Year_Ago,
+        `2024 Estimate`
+    )
+
+migration_2023_2024 <- migration_2023_wide |>
+    full_join(
+        migration_2024_wide,
+        by = c("State", "Residence_1_Year_Ago")
+    ) |>
+    left_join(
+        population_2024,
+        by = "State"
+    ) |>
+    select(
+        State,
+        Residence_1_Year_Ago,
+        Population,
+        `2023 Estimate`,
+        `2024 Estimate`
+    ) |>
+    arrange(State, Residence_1_Year_Ago)
+
+nrow(migration_2023_2024)
+
+migration_2023_2024
+```
+
+##  2023 + 2024 State to State Migration
+```{r}
+migration_2023_2024 <- migration_2023_wide |>
+    full_join(
+        migration_2024_wide,
+        by = c("State", "Residence_1_Year_Ago")
+    ) |>
+    left_join(
+        population_2024,
+        by = "State"
+    ) |>
+    mutate(
+        across(
+            c(`2023 Estimate`, `2024 Estimate`),
+            \(x){
+                x <- as.character(x)
+                x <- case_when(
+                    x == "N" ~ "0",
+                    x == "N/A" ~ "0",
+                    x == "X" ~ "0",
+                    TRUE ~ x
+                )
+                x <- readr::parse_number(x)
+                x <- replace_na(x, 0)
+                as.integer(x)
+            }
+        ),
+        Population = as.integer(Population)
+    ) |>
+    mutate(
+        `2023 Estimate` = if_else(
+            State == Residence_1_Year_Ago,
+            0L,
+            `2023 Estimate`
+        ),
+        `2024 Estimate` = if_else(
+            State == Residence_1_Year_Ago,
+            0L,
+            `2024 Estimate`
+        )
+    ) |>
+    select(
+        State,
+        Residence_1_Year_Ago,
+        Population,
+        `2023 Estimate`,
+        `2024 Estimate`
+    ) |>
+    arrange(State, Residence_1_Year_Ago)
+
+nrow(migration_2023_2024)
+
+migration_2023_2024
+```
+## TASK 4 Data Acquisition of Combined State-to-State Flows
+##Notes: Raw data contains phrases that were added to the State Column. Since no State has more than 3 words (i.e New Jersey, New York), any "State" with 3 words must be dropped.2 Year Data created 5,000 entries. 
+```{r}
+library(tidyverse)
+library(readxl)
+library(httr2)
+
+download_state_to_state_migration_file <- function(year){
+    
+    if(!dir.exists(file.path("data", "mp03"))){
+        dir.create(file.path("data", "mp03"),
+                   showWarnings = FALSE,
+                   recursive = TRUE)
+    }
+    
+    dest_file <- file.path(
+        "data",
+        "mp03",
+        paste0("state_to_state_migration_", year, ".xlsx")
+    )
+    
+    if(!file.exists(dest_file)){
+        request("https://www2.census.gov") |>
+            req_url_path(
+                "programs-surveys",
+                "demo",
+                "tables",
+                "geographic-mobility",
+                as.character(year),
+                "state-to-state-migration",
+                paste0("State_to_State_Migration_Table_", year, "_T13.xlsx")
+            ) |>
+            req_perform(dest_file)
+    }
+    
+    dest_file
+}
+
+state_to_state_migration_2023 <- function(){
+    
+    file_name <- download_state_to_state_migration_file(2023)
+    
+    states_with_dc <- c(
+        state.name[1:8],
+        "District of Columbia",
+        state.name[9:50]
+    )
+    
+    stationary <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "A12:H62",
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Population_1_Year_And_Over = ...2,
+            Same_Residence_1_Year_Ago = ...4,
+            Same_State_1_Year_Ago = ...6
+        ) |>
+        inner_join(
+            tibble(State = state.name),
+            by = "State"
+        ) |>
+        mutate(
+            Same_State_1_Year_Ago = as.character(Same_State_1_Year_Ago),
+            Same_State_1_Year_Ago = case_when(
+                Same_State_1_Year_Ago == "N" ~ "0",
+                Same_State_1_Year_Ago == "N/A" ~ "0",
+                Same_State_1_Year_Ago == "X" ~ "0",
+                TRUE ~ Same_State_1_Year_Ago
+            ),
+            Same_State_1_Year_Ago = readr::parse_number(Same_State_1_Year_Ago),
+            Same_State_1_Year_Ago = replace_na(Same_State_1_Year_Ago, 0),
+            Same_State_1_Year_Ago = as.integer(Same_State_1_Year_Ago),
+            Residence_1_Year_Ago = State,
+            Estimate = Same_State_1_Year_Ago
+        ) |>
+        select(State, Residence_1_Year_Ago, Estimate)
+    
+    flows <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "J12:DG62",
+        col_names = vctrs::vec_interleave(states_with_dc, NA_character_)
+    ) |>
+        select(any_of(states_with_dc)) |>
+        mutate(State = states_with_dc) |>
+        pivot_longer(
+            cols = -State,
+            names_to = "Residence_1_Year_Ago",
+            values_to = "Estimate"
+        ) |>
+        filter(
+            State != "District of Columbia",
+            Residence_1_Year_Ago != "District of Columbia",
+            State != Residence_1_Year_Ago
+        ) |>
+        mutate(
+            Estimate = as.character(Estimate),
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                Estimate == "N/A" ~ "0",
+                Estimate == "X" ~ "0",
+                TRUE ~ Estimate
+            ),
+            Estimate = readr::parse_number(Estimate),
+            Estimate = replace_na(Estimate, 0),
+            Estimate = as.integer(Estimate)
+        ) |>
+        select(State, Residence_1_Year_Ago, Estimate)
+    
+    bind_rows(flows, stationary) |>
+        group_by(State, Residence_1_Year_Ago) |>
+        summarize(
+            Estimate = sum(Estimate, na.rm = TRUE),
+            .groups = "drop"
+        ) |>
+        complete(
+            State = state.name,
+            Residence_1_Year_Ago = state.name,
+            fill = list(Estimate = 0L)
+        ) |>
+        mutate(Year = 2023L) |>
+        select(Year, State, Residence_1_Year_Ago, Estimate) |>
+        arrange(State, Residence_1_Year_Ago)
+}
+
+state_to_state_migration_2024 <- function(){
+    
+    file_name <- download_state_to_state_migration_file(2024)
+    
+    stationary <- read_excel(
+        file_name,
+        sheet = "Supplemental - Current Res",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Estimate = ...2
+        ) |>
+        filter(
+            !is.na(State),
+            State != "Current Residence",
+            State != "Puerto Rico",
+            str_count(State, "\\S+") <= 2
+        ) |>
+        inner_join(
+            tibble(State = state.name),
+            by = "State"
+        ) |>
+        mutate(
+            Residence_1_Year_Ago = State,
+            Estimate = as.character(Estimate),
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                Estimate == "N/A" ~ "0",
+                Estimate == "X" ~ "0",
+                TRUE ~ Estimate
+            ),
+            Estimate = readr::parse_number(Estimate),
+            Estimate = replace_na(Estimate, 0),
+            Estimate = as.integer(Estimate)
+        ) |>
+        select(State, Residence_1_Year_Ago, Estimate)
+    
+    flows <- read_excel(
+        file_name,
+        sheet = "Table",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Residence_1_Year_Ago = ...2,
+            Estimate = ...3
+        ) |>
+        fill(State) |>
+        filter(
+            !is.na(State),
+            !is.na(Residence_1_Year_Ago),
+            State != "Current Residence",
+            Residence_1_Year_Ago != "Residence 1 year ago",
+            !str_detect(Residence_1_Year_Ago, "Non-moving"),
+            State != "Puerto Rico",
+            Residence_1_Year_Ago != "Puerto Rico",
+            str_count(State, "\\S+") <= 2,
+            str_count(Residence_1_Year_Ago, "\\S+") <= 2
+        ) |>
+        inner_join(
+            tibble(State = state.name),
+            by = "State"
+        ) |>
+        inner_join(
+            tibble(Residence_1_Year_Ago = state.name),
+            by = "Residence_1_Year_Ago"
+        ) |>
+        mutate(
+            Estimate = as.character(Estimate),
+            Estimate = case_when(
+                Estimate == "N" ~ "0",
+                Estimate == "N/A" ~ "0",
+                Estimate == "X" ~ "0",
+                TRUE ~ Estimate
+            ),
+            Estimate = readr::parse_number(Estimate),
+            Estimate = replace_na(Estimate, 0),
+            Estimate = as.integer(Estimate)
+        ) |>
+        select(State, Residence_1_Year_Ago, Estimate)
+    
+    bind_rows(flows, stationary) |>
+        group_by(State, Residence_1_Year_Ago) |>
+        summarize(
+            Estimate = sum(Estimate, na.rm = TRUE),
+            .groups = "drop"
+        ) |>
+        complete(
+            State = state.name,
+            Residence_1_Year_Ago = state.name,
+            fill = list(Estimate = 0L)
+        ) |>
+        mutate(Year = 2024L) |>
+        select(Year, State, Residence_1_Year_Ago, Estimate) |>
+        arrange(State, Residence_1_Year_Ago)
+}
+
+state_to_state_migration <- function(){
+    
+    migration_2023 <- state_to_state_migration_2023()
+    migration_2024 <- state_to_state_migration_2024()
+    
+    bind_rows(migration_2023, migration_2024) |>
+        arrange(Year, State, Residence_1_Year_Ago)
+}
+
+migration_all <- state_to_state_migration()
+
+migration_all |>
+    count(Year)
+
+dim(migration_all)
+
+migration_all
+```
+## Excel Spreadsheet Inspected.
+## After further inspection of the raw data on Excel, some variables are not needed such as Puerto Rico, Foreign country and more. 
+```{r}
+library(tidyverse)
+
+migration_2024_clean <- migration_2024 |>
+    mutate(
+        Estimate = readr::parse_number(as.character(Estimate))
+    ) |>
+    filter(
+        State != "District of Columbia",
+        State != "Puerto Rico",
+        State != "U.S. Island Areas",
+        State != "Foreign Country",
+        Residence_1_Year_Ago != "District of Columbia",
+        Residence_1_Year_Ago != "Puerto Rico",
+        Residence_1_Year_Ago != "U.S. Island Areas",
+        Residence_1_Year_Ago != "Foreign Country",
+        State != Residence_1_Year_Ago   
+    )
+
+migration_2024_clean
+```
+
+## TASK 5 Data Acquisition for Metro-to-Metro Migration Flows
+
+```{r}
+library(tidyverse)
+library(glue)
+library(jsonlite)
+
+download_msa <- function(){
+    
+    if(!dir.exists(file.path("data", "mp03"))){
+        dir.create(file.path("data", "mp03"),
+                   showWarnings = FALSE,
+                   recursive = TRUE)
+    }
+    
+    dest_file <- file.path(
+        "data",
+        "mp03",
+        "metro_to_metro_migration_2016_2020.json"
+    )
+    
+    api_url <- paste0(
+        "https://api.census.gov/data/2020/acs/flows?",
+        "get=MOVEDIN,MOVEDOUT,FULL1_NAME,FULL2_NAME&",
+        "for=metropolitan%20statistical%20area/micropolitan%20statistical%20area:*"
+    )
+    
+    if(!file.exists(dest_file)){
+        download.file(
+            url = api_url,
+            destfile = dest_file,
+            mode = "wb",
+            quiet = TRUE
+        )
+    }
+    
+    raw_json <- fromJSON(dest_file)
+    
+    raw_json |>
+        as_tibble() |>
+        slice(-1) |>
+        setNames(raw_json[1, ]) |>
+        mutate(
+            MOVEDIN = as.integer(MOVEDIN),
+            MOVEDOUT = as.integer(MOVEDOUT)
+        )
+}
+
+metro_migration_2016_2020 <- download_msa()
+
+metro_migration_2016_2020
+```
+## Convert to Four Columns
+```{r}
+library(tidyverse)
+library(jsonlite)
+
+move_row_to_colnames <- function(X, row = 1){
+    
+    X <- do.call(rbind, X) |>
+        as.data.frame(stringsAsFactors = FALSE)
+    
+    colnames(X) <- unlist(X[row, ], use.names = FALSE)
+    
+    X <- X[-row, , drop = FALSE]
+    
+    X |>
+        as_tibble() |>
+        readr::type_convert()
+}
+
+metro_migration_2016_2020 <- read_json(
+    file.path("data", "mp03", "metro_to_metro_migration_2016_2020.json")
+) |>
+    move_row_to_colnames() |>
+    as_tibble() |>
+    rename(
+        in_city = MOVEDIN,
+        out_city = MOVEDOUT,
+        destination = FULL1_NAME,
+        origin = FULL2_NAME
+    ) |>
+    select(
+        in_city,
+        out_city,
+        destination,
+        origin
+    )
+
+metro_migration_2016_2020
+```
+
+## Multiple Mtero Areas to be Converged to One State. 
+## Only 10 results will be shown on this page. 
+```{r}
+library(tidyverse)
+library(jsonlite)
+library(stringr)
+library(gt)
+
+move_row_to_colnames <- function(X, row = 1){
+    
+    X <- do.call(rbind, lapply(X, unlist))
+    
+    colnames(X) <- X[row, ]
+    
+    X <- X[-row, , drop = FALSE]
+    
+    X |>
+        as.data.frame(stringsAsFactors = FALSE) |>
+        as_tibble(.name_repair = "minimal") |>
+        readr::type_convert()
+}
+
+pull_state_from_metro <- function(metro_name){
+    str_extract(metro_name, ".*, (\\S{2})[-[:alpha:]]* Metro Area", group = 1)
+}
+
+example_metros <- c(
+    "Los Angeles-Long Beach-Anaheim, CA Metro Area",
+    "Dallas-Fort Worth-Arlington, TX Metro Area",
+    "Riverside-San Bernardino-Ontario, CA Metro Area",
+    "Atlanta-Sandy Springs-Alpharetta, GA Metro Area",
+    "Chicago-Naperville-Elgin, IL-IN-WI Metro Area",
+    "New York-Newark-Jersey City, NY-NJ-PA Metro Area",
+    "Outside Metro Area within U.S. or Puerto Rico",
+    "Houston-The Woodlands-Sugar Land, TX Metro Area",
+    "Washington-Arlington-Alexandria, DC-VA-MD-WV Metro Area",
+    "San Jose-Sunnyvale-Santa Clara, CA Metro Area"
+)
+
+metro_lookup <- tibble(metro = example_metros) |>
+    mutate(metro_state = pull_state_from_metro(metro))
+
+metro_table <- read_json(
+    file.path("data", "mp03", "metro_to_metro_migration_2016_2020.json")
+) |>
+    move_row_to_colnames() |>
+    rename(
+        in_city = MOVEDIN,
+        out_city = MOVEDOUT,
+        destination = FULL1_NAME,
+        origin = FULL2_NAME
+    ) |>
+    mutate(
+        destination = as.character(destination),
+        origin = as.character(origin),
+        in_city = as.integer(in_city),
+        out_city = as.integer(out_city)
+    ) |>
+    filter(
+        destination %in% example_metros |
+        origin %in% example_metros
+    ) |>
+    mutate(
+        metro = case_when(
+            destination %in% example_metros ~ destination,
+            origin %in% example_metros ~ origin
+        )
+    ) |>
+    select(
+        metro,
+        in_city,
+        out_city
+    ) |>
+    left_join(metro_lookup, by = "metro") |>
+    select(
+        metro,
+        metro_state,
+        in_city,
+        out_city
+    ) |>
+    slice_head(n = 10) |>
+    gt(id = "tbl_metro_states") |>
+    cols_label(
+        metro = "Metropolitan Statistical Area",
+        metro_state = "Primary State",
+        in_city = "Moved In",
+        out_city = "Moved Out"
+    )
+
+metro_table
+```
+
+##Task 6: Exploratory Data Analysis
+
+##TASK 6.1 States with highest net population growth rates over the past 10 years
+```{r}
+library(tidyverse)
+library(gt)
+
+state_population <- load_state_population()
+
+growth_table <- state_population |>
+    filter(Year != 2020) |>
+    arrange(State, Year) |>
+    group_by(State) |>
+    mutate(
+        pct_change = (`Total Population` - lag(`Total Population`)) / lag(`Total Population`)
+    ) |>
+    filter(!is.na(pct_change)) |>
+    summarize(
+        avg_growth = mean(pct_change, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(avg_growth)) |>
+    slice_head(n = 5)
+
+growth_table |>
+    gt(id = "tbl_state_growth") |>
+    fmt_percent(
+        columns = avg_growth,
+        decimals = 2
+    ) |>
+    cols_label(
+        State = "State",
+        avg_growth = "Average Yearly Growth Rate"
+    )
+```
+##TASK 6.2a 
+##If you meet a new friend in NYC, which State in the city will likely he/she be from?
+## Results show its most likely from the NY State (NY as a state is huge) or neighboring Pennsylvania. 
+```{r}
+ny_state_inflow_top10 <- metro_migration_2016_2020 |>
+    filter(
+        destination == "New York-Newark-Jersey City, NY-NJ-PA Metro Area"
+    ) |>
+    mutate(
+        in_city = readr::parse_number(as.character(in_city)),
+        origin_state = pull_state_from_metro(origin)
+    ) |>
+    filter(!is.na(origin_state)) |>
+    group_by(origin_state) |>
+    summarize(
+        total_in_city = sum(in_city, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_in_city)) |>
+    slice_head(n = 10)
+
+ny_state_inflow_top10
+```
+## TASK 6.2b When a NY goes out of NYC, which top 10 states he/she will likely to move?
+
+```{r}
+library(tidyverse)
+
+ny_inflow_top3 <- migration_2024_compare |>
+    filter(
+        State == "New York",
+        Residence_1_Year_Ago != "New York"
+    ) |>
+    mutate(
+        Estimate = readr::parse_number(as.character(Estimate))
+    ) |>
+    group_by(Residence_1_Year_Ago) |>
+    summarize(
+        total_inflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_inflow)) |>
+    slice_head(n = 3)
+
+ny_inflow_top3
+```
+If you meet a fellow American that moved into New York, this person could likely come from the state of `r ny_inflow_top3$Residence_1_Year_Ago[1]`, followed by `r ny_inflow_top3$Residence_1_Year_Ago[2]` and `r ny_inflow_top3$Residence_1_Year_Ago[3]`.
+
+
+##TASK 6.3 METROPOLIS QUESTION. 
+##If you meet someone who moved to New York City in the last year, what are the most likely metro areas they moved from? If one of your friends announces they are moving out of the city, where are they most likely to move?
+```{r}
+```{r}
+ny_inflow_top10 <- metro_migration_2016_2020 |>
+    filter(
+        destination == "New York-Newark-Jersey City, NY-NJ-PA Metro Area"
+    ) |>
+    mutate(
+        in_city = readr::parse_number(as.character(in_city))
+    ) |>
+    arrange(desc(in_city)) |>
+    select(
+        origin,
+        in_city
+    ) |>
+    slice_head(n = 10)
+
+ny_inflow_top10
+```
+##INLINE STATEMENT
+If you meet someone in NYC, the city they could most likely come from is **`r ny_inflow_top10$origin[1]`**
+
+
+## New York Metro Outflow
+
+```{r}
+library(tidyverse)
+
+ny_outflow_top10 <- metro_migration_2016_2020 |>
+    filter(
+        origin == "New York-Newark-Jersey City, NY-NJ-PA Metro Area"
+    ) |>
+    mutate(
+        out_city = readr::parse_number(as.character(out_city))
+    ) |>
+    arrange(desc(out_city)) |>
+    select(
+        destination,
+        out_city
+    ) |>
+    slice_head(n = 10)
+```
+##INLINE STATEMENT
+
+A resident of New York will most likely move to the state(s) of `r gsub("-", ", ", stringr::str_extract(ny_outflow_top10$destination[1], "[A-Z]{2}(?:-[A-Z]{2})*"))`, with `r scales::comma(ny_outflow_top10$out_city[1])` people moving there.
+
+## TASK 6.4 Highest number of in-migration and out-migration in 2024
+
+## Top Outflow Migration by State
+```{r}
+state_outflow_top5_2024 <- migration_2024_clean |>
+    group_by(Residence_1_Year_Ago) |>
+    summarize(
+        total_outflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_outflow)) |>
+    slice_head(n = 5) |>
+    rename(State = Residence_1_Year_Ago)
+
+state_outflow_top5_2024 |>
+    gt(id = "tbl_state_outflow_top5_2024") |>
+    fmt_number(
+        columns = total_outflow,
+        decimals = 0
+    ) |>
+    cols_label(
+        State = "State",
+        total_outflow = "Total Outflow in 2024"
+    )
+```
+##Top Inflow Migration by State
+```{r}
+library(tidyverse)
+library(gt)
+
+state_inflow_top5_2024 <- migration_2024_clean |>
+    group_by(State) |>
+    summarize(
+        total_inflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_inflow)) |>
+    slice_head(n = 5)
+
+state_inflow_top5_2024 |>
+    gt(id = "tbl_state_inflow_top5_2024") |>
+    fmt_number(
+        columns = total_inflow,
+        decimals = 0
+    ) |>
+    cols_label(
+        State = "State",
+        total_inflow = "Total Inflow in 2024"
+    )
+```
+## Tally Total Outflow and Inflows of the top states and we could obtain the location with most migration activities.
+```{r}
+library(tidyverse)
+library(gt)
+
+state_inflow_2024 <- migration_2024_clean |>
+    group_by(State) |>
+    summarize(
+        total_inflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    )
+
+state_outflow_2024 <- migration_2024_clean |>
+    group_by(Residence_1_Year_Ago) |>
+    summarize(
+        total_outflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    rename(State = Residence_1_Year_Ago)
+
+state_net_flow_2024 <- state_inflow_2024 |>
+    inner_join(state_outflow_2024, by = "State") |>
+    mutate(
+        net_flow = total_inflow - total_outflow
+    ) |>
+    arrange(desc(net_flow))
+
+state_net_flow_2024 |>
+    gt(id = "tbl_state_net_flow_2024") |>
+    fmt_number(
+        columns = c(total_inflow, total_outflow, net_flow),
+        decimals = 0
+    ) |>
+    cols_label(
+        State = "State",
+        total_inflow = "Total Inflow in 2024",
+        total_outflow = "Total Outflow in 2024",
+        net_flow = "Net Flow in 2024"
+    )
+```
+
+##TASK 6.5: Inflows and Outflows in Cities + Net Migration
+```{r}
+library(tidyverse)
+library(gt)
+
+msa_migration_impact <- metro_migration_2016_2020 |>
+    mutate(
+        in_city = readr::parse_number(as.character(in_city)),
+        out_city = readr::parse_number(as.character(out_city))
+    ) |>
+    group_by(destination) |>
+    summarize(
+        total_in_city = sum(in_city, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    inner_join(
+        metro_migration_2016_2020 |>
+            mutate(
+                out_city = readr::parse_number(as.character(out_city))
+            ) |>
+            group_by(origin) |>
+            summarize(
+                total_out_city = sum(out_city, na.rm = TRUE),
+                .groups = "drop"
+            ) |>
+            rename(destination = origin),
+        by = "destination"
+    ) |>
+    mutate(
+        net_flow = total_in_city - total_out_city
+    ) |>
+    arrange(desc(net_flow))
+
+msa_migration_impact |>
+    slice_head(n = 10) |>
+    gt(id = "tbl_msa_net_flow") |>
+    fmt_number(
+        columns = c(total_in_city, total_out_city, net_flow),
+        decimals = 0
+    ) |>
+    cols_label(
+        destination = "Metropolitan Area",
+        total_in_city = "Total In-City Migration",
+        total_out_city = "Total Out-City Migration",
+        net_flow = "Net Migration"
+    )
+```
+
+
+##TASK 6.6 : States with Highest Fraction of Residents Relative to In-Migration
+```{r}
+library(tidyverse)
+library(gt)
+
+same_state_share_2024 <- migration_2024_compare |>
+    mutate(
+        Estimate = readr::parse_number(as.character(Estimate))
+    ) |>
+    group_by(State) |>
+    summarize(
+        total_same_state = sum(
+            Estimate[State == Residence_1_Year_Ago],
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    ) |>
+    inner_join(
+        migration_2024_clean |>
+            group_by(State) |>
+            summarize(
+                total_inflow = sum(Estimate, na.rm = TRUE),
+                .groups = "drop"
+            ),
+        by = "State"
+    ) |>
+    mutate(
+        total_population_base = total_same_state + total_inflow,
+        pct_lived_there_last_year = total_same_state / total_population_base,
+        pct_in_migration = total_inflow / total_population_base
+    ) |>
+    arrange(desc(pct_lived_there_last_year))
+
+same_state_share_2024 |>
+    slice_head(n = 10) |>
+    gt(id = "tbl_same_state_share_2024") |>
+    fmt_number(
+        columns = c(total_same_state, total_inflow, total_population_base),
+        decimals = 0
+    ) |>
+    fmt_percent(
+        columns = c(pct_lived_there_last_year, pct_in_migration),
+        decimals = 2
+    ) |>
+    cols_label(
+        State = "State",
+        total_same_state = "Lived in Same State Last Year",
+        total_inflow = "Total In-Migration",
+        total_population_base = "Total Compared Population",
+        pct_lived_there_last_year = "Fraction Lived There Last Year",
+        pct_in_migration = "Proportional In-Migration"
+    )
+```
+
+## TASK 7 : State with Highest Population Growth Rates Relative to Its Net Migration
+##Net internal migration is the difference between the number of people moving into an area and the number leaving it. 
+```{r}
+library(tidyverse)
+library(gt)
+
+migration_impact_2024 <- migration_2024_compare |>
+    mutate(
+        Estimate = readr::parse_number(as.character(Estimate))
+    ) |>
+    group_by(State) |>
+    summarize(
+        total_same_state = sum(
+            Estimate[State == Residence_1_Year_Ago],
+            na.rm = TRUE
+        ),
+        total_inflow = sum(
+            Estimate[State != Residence_1_Year_Ago],
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    ) |>
+    inner_join(
+        migration_2024_clean |>
+            group_by(Residence_1_Year_Ago) |>
+            summarize(
+                total_outflow = sum(Estimate, na.rm = TRUE),
+                .groups = "drop"
+            ) |>
+            rename(State = Residence_1_Year_Ago),
+        by = "State"
+    ) |>
+    mutate(
+        net_flow = total_inflow - total_outflow,
+        migration_impact = net_flow / total_same_state
+    ) |>
+    arrange(desc(migration_impact))
+
+migration_impact_2024 |>
+    slice_head(n = 10) |>
+    gt(id = "tbl_migration_impact_2024") |>
+    fmt_number(
+        columns = c(total_same_state, total_inflow, total_outflow, net_flow),
+        decimals = 0
+    ) |>
+    fmt_percent(
+        columns = migration_impact,
+        decimals = 2
+    ) |>
+    cols_label(
+        State = "State",
+        total_same_state = "Lived in Same State Last Year",
+        total_inflow = "Total Inflow",
+        total_outflow = "Total Outflow",
+        net_flow = "Net Flow",
+        migration_impact = "Migration Impact (Relative to Base)"
+    )
+```
+
+##TASK 6.8 My Chosen State is North Carolina. 
+
+##Top 5 Migration States to North Carolina in 2024.
+## Note how new migrants from NC come from  "The South"
+```{r}
+library(tidyverse)
+library(gt)
+
+nc_inflow_top5 <- migration_2024_clean |>
+    filter(
+        State == "North Carolina"
+    ) |>
+    group_by(Residence_1_Year_Ago) |>
+    summarize(
+        total_inflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_inflow)) |>
+    slice_head(n = 5)
+
+nc_inflow_top5 |>
+    gt(id = "tbl_nc_inflow_top5") |>
+    fmt_number(
+        columns = total_inflow,
+        decimals = 0
+    ) |>
+    cols_label(
+        Residence_1_Year_Ago = "Origin State",
+        total_inflow = "People Moving to North Carolina"
+    )
+```
+# Top 5 Destination States of NC Migrants in 2024
+```{r}
+nc_outflow_top5 <- migration_2024_clean |>
+    filter(
+        Residence_1_Year_Ago == "North Carolina"
+    ) |>
+    group_by(State) |>
+    summarize(
+        total_outflow = sum(Estimate, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_outflow)) |>
+    slice_head(n = 5)
+
+nc_outflow_top5 |>
+    gt(id = "tbl_nc_outflow_top5") |>
+    fmt_number(
+        columns = total_outflow,
+        decimals = 0
+    ) |>
+    cols_label(
+        State = "Destination State",
+        total_outflow = "People Leaving North Carolina"
+    )
+```
+##TASK 6.9 Charlotte is the largest Metropolitan State in NC. 
+```{r}
+library(tidyverse)
+library(gt)
+
+charlotte_inflow_top3 <- metro_migration_2016_2020 |>
+    filter(
+        destination == "Charlotte-Concord-Gastonia, NC-SC Metro Area"
+    ) |>
+    mutate(
+        in_city = readr::parse_number(as.character(in_city))
+    ) |>
+    arrange(desc(in_city)) |>
+    select(
+        origin,
+        in_city
+    ) |>
+    slice_head(n = 6)
+
+charlotte_inflow_top3 |>
+    gt(id = "tbl_charlotte_inflow_top3") |>
+    fmt_number(
+        columns = in_city,
+        decimals = 0
+    ) |>
+    cols_label(
+        origin = "Origin Metro Area",
+        in_city = "People Moving Into Charlotte"
+    )
+```
+##TASK 6.10 Are there any metro areas that have a particularly high connection to your state’s largest metro?
+```{r}
+library(tidyverse)
+
+charlotte_inflow_top1 <- metro_migration_2016_2020 |>
+    filter(
+        destination == "Charlotte-Concord-Gastonia, NC-SC Metro Area",
+        !str_detect(origin, "Outside Metro Area"),
+        !str_detect(origin, "Asia")
+    ) |>
+    mutate(
+        in_city = readr::parse_number(as.character(in_city))
+    ) |>
+    mutate(
+        total_inflow = sum(in_city, na.rm = TRUE)
+    ) |>
+    mutate(
+        market_share = in_city / total_inflow
+    ) |>
+    arrange(desc(in_city)) |>
+    select(
+        origin,
+        in_city,
+        market_share
+    ) |>
+    slice_head(n = 1)
+
+charlotte_inflow_top1
+```
+The metro area `r charlotte_inflow_top1$origin[1]` has a high connection to Charlotte, NC, accounting for `r scales::percent(charlotte_inflow_top1$market_share[1], accuracy = 0.01)` of total inflow.
+
+##TASK 7  North Carolina Population Projection
+##TASK7.1. Determine Net Migration to the US
+##I Have modified dataset to include US Island Areas, Puerto Rico, and Foreign Country. 
+```{r}
+library(tidyverse)
+library(readxl)
+
+state_to_state_migration_2024_raw <- function(){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2024.xlsx"
+    )
+    
+    read_excel(
+        file_name,
+        sheet = "Table",
+        skip = 6,
+        col_names = FALSE
+    ) |>
+        select(
+            Current_Residence = ...1,
+            Residence_1_Year_Ago = ...2,
+            Estimate = ...3
+        ) |>
+        fill(Current_Residence) |>
+        filter(
+            !is.na(Current_Residence),
+            !is.na(Residence_1_Year_Ago),
+            Current_Residence != "Current Residence",
+            Residence_1_Year_Ago != "Residence 1 year ago"
+        ) |>
+        mutate(
+            Estimate = readr::parse_number(as.character(Estimate))
+        )
+}
+
+migration_2024_compare <- state_to_state_migration_2024_raw()
+
+migration_2024_compare
+```
+##2023 Migration that Includes Puerto Rico, Foreign Country and more
+```{r}
+library(tidyverse)
+library(readxl)
+
+state_to_state_migration_2023_raw <- function(){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2023.xlsx"
+    )
+    
+    states_with_dc <- c(
+        state.name[1:8],
+        "District of Columbia",
+        state.name[9:50]
+    )
+    
+    stationary <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "A12:H62",
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Same_State_1_Year_Ago = ...6
+        ) |>
+        mutate(
+            Residence_1_Year_Ago = State,
+            Estimate = readr::parse_number(as.character(Same_State_1_Year_Ago))
+        ) |>
+        select(
+            State,
+            Residence_1_Year_Ago,
+            Estimate
+        )
+    
+    flows <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "J12:DG62",
+        col_names = vctrs::vec_interleave(states_with_dc, NA_character_)
+    ) |>
+        select(any_of(states_with_dc)) |>
+        mutate(State = states_with_dc) |>
+        pivot_longer(
+            cols = -State,
+            names_to = "Residence_1_Year_Ago",
+            values_to = "Estimate"
+        ) |>
+        mutate(
+            Estimate = readr::parse_number(as.character(Estimate))
+        )
+    
+    extra_rows <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "A63:H66",
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Same_State_1_Year_Ago = ...6
+        ) |>
+        mutate(
+            Residence_1_Year_Ago = State,
+            Estimate = readr::parse_number(as.character(Same_State_1_Year_Ago))
+        ) |>
+        select(
+            State,
+            Residence_1_Year_Ago,
+            Estimate
+        )
+    
+    bind_rows(flows, stationary, extra_rows) |>
+        filter(
+            !is.na(State),
+            !is.na(Residence_1_Year_Ago),
+            State != Residence_1_Year_Ago
+        )
+}
+
+migration_2023_compare <- state_to_state_migration_2023_raw()
+
+migration_2023_compare
+```
+##TASK 7.1 Net Migration from Foreign Countries, including Puerto Rico
+
+```{r}
+library(tidyverse)
+
+M_2023 <- migration_2024_compare |>
+    mutate(
+        Estimate = readr::parse_number(as.character(Estimate))
+    ) |>
+    filter(
+        Residence_1_Year_Ago == "Foreign Country" |
+        Residence_1_Year_Ago == "Puerto Rico" |
+        Residence_1_Year_Ago == "U.S. Island Areas"
+    ) |>
+    summarize(
+        M_2023 = sum(Estimate, na.rm = TRUE)
+   
+    )
+
+M_2023
+```
+## TASK 7.2 US Census. 2023 population: 336.8 million, 2024 population: 340.1 million
+computation for growth rate using national populations
+```{r}
+library(tidyverse)
+
+P_2023 <- 336.8e6
+P_2024 <- 340.1e6
+
+g_2023 <- (P_2024 - P_2023 - M_2023$M_2023) / P_2023
+
+g_2023
+```
+##TASK 7.3 Migration flow estimate from 2023 to 2024
+```{r}
+library(tidyverse)
+
+state_population_2023 <- load_state_population() |>
+    filter(Year == 2023) |>
+    select(
+        State,
+        Population_2023 = `Total Population`
+    )
+
+migration_factors_2023 <- migration_2024_clean |>
+    rename(
+        destination_state = State,
+        origin_state = Residence_1_Year_Ago,
+        flow_2023 = Estimate
+    ) |>
+    left_join(
+        state_population_2023 |>
+            rename(destination_state = State,
+                   destination_pop_2023 = Population_2023),
+        by = "destination_state"
+    ) |>
+    left_join(
+        state_population_2023 |>
+            rename(origin_state = State,
+                   origin_pop_2023 = Population_2023),
+        by = "origin_state"
+    ) |>
+    mutate(
+        m_2023 = flow_2023 / sqrt(destination_pop_2023 * origin_pop_2023)
+    ) |>
+    arrange(desc(m_2023))
+
+migration_factors_2023
+```
+##TASK 7.4 Repeating Same Steps for 2022 to 2023 Migration Data
+##Using raw dataset to include Foreign Country for 2022-2023
+
+```{r}
+library(tidyverse)
+library(readxl)
+
+state_to_state_migration_2023_raw <- function(){
+    
+    file_name <- file.path(
+        "data",
+        "mp03",
+        "state_to_state_migration_2023.xlsx"
+    )
+    
+    states_with_dc <- c(
+        state.name[1:8],
+        "District of Columbia",
+        state.name[9:50]
+    )
+    
+    summary_block <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "A12:H80",
+        col_names = FALSE
+    ) |>
+        select(
+            State = ...1,
+            Same_State_1_Year_Ago = ...6
+        ) |>
+        filter(!is.na(State)) |>
+        mutate(
+            Residence_1_Year_Ago = State,
+            Estimate = readr::parse_number(as.character(Same_State_1_Year_Ago))
+        ) |>
+        select(State, Residence_1_Year_Ago, Estimate)
+    
+    flows_block <- read_excel(
+        file_name,
+        sheet = "Table",
+        range = "J12:DG80",
+        col_names = vctrs::vec_interleave(states_with_dc, NA_character_)
+    ) |>
+        select(any_of(states_with_dc)) |>
+        mutate(State = c(states_with_dc, rep(NA_character_, n() - length(states_with_dc)))) |>
+        fill(State) |>
+        pivot_longer(
+            cols = -State,
+            names_to = "Residence_1_Year_Ago",
+            values_to = "Estimate"
+        ) |>
+        mutate(
+            Estimate = readr::parse_number(as.character(Estimate))
+        ) |>
+        filter(!is.na(State))
+    
+    bind_rows(flows_block, summary_block) |>
+        filter(
+            !is.na(State),
+            !is.na(Residence_1_Year_Ago),
+            State != Residence_1_Year_Ago
+        )
+}
+
+migration_2022_to_2023 <- state_to_state_migration_2023_raw()
+
+migration_2022_to_2023
+```
+
+##2022 to 2023 Records on Excel has a total value for Americans Abroad. To simplify matters, this one value will be used for 2023 migration evaluation. R renders exact Excel spreadsheet number. 
+```{r}
+library(tidyverse)
+library(readxl)
+
+M_2022 <- read_excel(
+    file.path("data", "mp03", "state_to_state_migration_2023.xlsx"),
+    sheet = "Table",
+    range = "DH10:DH10",
+    col_names = FALSE
+) |>
+    rename(M_2022 = ...1) |>
+    mutate(
+        M_2022 = readr::parse_number(as.character(M_2022)),
+        M_2022 = round(M_2022, 2)
+    )
+
+M_2022
+```
+##Obtaining growth rate for 2022-2023
+```{r}
+library(tidyverse)
+
+P_2022 <- 333.3e6
+P_2023 <- 336.8e6
+
+g_2022 <- (P_2023 - P_2022 - M_2022) / P_2022
+
+g_2022
+```
+
+## Migration Factor for 2022-2023
+```{r}
+library(tidyverse)
+
+state_population_2022 <- load_state_population() |>
+    filter(Year == 2022) |>
+    select(
+        State,
+        Population_2022 = `Total Population`
+    )
+
+migration_factors_2022 <- migration_2022_to_2023 |>
+    rename(
+        destination_state = State,
+        origin_state = Residence_1_Year_Ago,
+        flow_2022 = Estimate
+    ) |>
+    mutate(
+        flow_2022 = as.character(flow_2022),
+        flow_2022 = case_when(
+            flow_2022 == "N/A" ~ NA_character_,
+            flow_2022 == "N" ~ NA_character_,
+            flow_2022 == "X" ~ NA_character_,
+            TRUE ~ flow_2022
+        ),
+        flow_2022 = readr::parse_number(flow_2022)
+    ) |>
+    filter(
+        destination_state != "District of Columbia",
+        origin_state != "District of Columbia",
+        destination_state != origin_state,
+        !is.na(flow_2022)
+    ) |>
+    inner_join(
+        state_population_2022 |>
+            rename(
+                destination_state = State,
+                destination_pop_2022 = Population_2022
+            ),
+        by = "destination_state"
+    ) |>
+    inner_join(
+        state_population_2022 |>
+            rename(
+                origin_state = State,
+                origin_pop_2022 = Population_2022
+            ),
+        by = "origin_state"
+    ) |>
+    mutate(
+        m_2022 = flow_2022 / sqrt(destination_pop_2022 * origin_pop_2022)
+    ) |>
+    arrange(desc(m_2022))
+
+migration_factors_2022
+```
+## TASK 7.5 Average Growth Rate 
+```{r}
+g_avg <- (g_2022 + g_2023) / 2
+
+g_avg
+```
+## Average Migration Factor
+```{r}
+library(tidyverse)
+
+migration_factors_avg <- migration_factors_2022 |>
+    select(
+        destination_state,
+        origin_state,
+        m_2022
+    ) |>
+    inner_join(
+        migration_factors_2023 |>
+            select(
+                destination_state,
+                origin_state,
+                m_2023
+            ),
+        by = c("destination_state", "origin_state")
+    ) |>
+    mutate(
+        m_avg = (m_2022 + m_2023) / 2
+    ) |>
+    arrange(desc(m_avg))
+
+migration_factors_avg
+```
+## TASK 7.6 Prediction for Populations 2025-2030
+
+## Population Projections, 2023 to 2030
+```{r}
+library(tidyverse)
+
+state_pop <- load_state_population() |>
+    filter(
+        Year == 2024,
+        State != "Puerto Rico",
+        State != "District of Columbia"
+    ) |>
+    select(State, Population = `Total Population`)
+
+
+m_matrix <- migration_factors_avg |>
+    filter(
+        destination_state != "Puerto Rico",
+        destination_state != "District of Columbia",
+        origin_state != "Puerto Rico",
+        origin_state != "District of Columbia"
+    ) |>
+    select(destination_state, origin_state, m_avg)
+
+# Growth rate
+g <- g_avg
+
+# Function to compute next year population
+compute_next_year <- function(pop_df){
+    
+    pop_df |>
+        rename(P_i = Population) |>
+        left_join(
+            pop_df |> rename(origin_state = State, P_j = Population),
+            by = character()
+        ) |>
+        rename(destination_state = State) |>
+        left_join(
+            m_matrix,
+            by = c("destination_state", "origin_state")
+        ) |>
+        mutate(
+            migration_term = m_avg * sqrt(P_i * P_j)
+        ) |>
+        group_by(destination_state) |>
+        summarize(
+            P_next = unique(P_i) * (1 + g) + sum(migration_term, na.rm = TRUE),
+            .groups = "drop"
+        ) |>
+        rename(State = destination_state, Population = P_next)
+}
+
+# Projection
+pop_2025 <- compute_next_year(state_pop)
+pop_2026 <- compute_next_year(pop_2025)
+pop_2027 <- compute_next_year(pop_2026)
+pop_2028 <- compute_next_year(pop_2027)
+pop_2029 <- compute_next_year(pop_2028)
+pop_2030 <- compute_next_year(pop_2029)
+
+pop_2030
+```
+##All rows to numeric
+```{r}
+library(tidyverse)
+library(gt)
+
+population_projection_all <- bind_rows(
+    state_pop |> mutate(
+        Year = 2024,
+        Population = as.numeric(Population)
+    ),
+    pop_2025 |> mutate(
+        Year = 2025,
+        Population = as.numeric(unlist(Population))
+    ),
+    pop_2026 |> mutate(
+        Year = 2026,
+        Population = as.numeric(unlist(Population))
+    ),
+    pop_2027 |> mutate(
+        Year = 2027,
+        Population = as.numeric(unlist(Population))
+    ),
+    pop_2028 |> mutate(
+        Year = 2028,
+        Population = as.numeric(unlist(Population))
+    ),
+    pop_2029 |> mutate(
+        Year = 2029,
+        Population = as.numeric(unlist(Population))
+    ),
+    pop_2030 |> mutate(
+        Year = 2030,
+        Population = as.numeric(unlist(Population))
+    )
+)
+
+population_projection_wide <- population_projection_all |>
+    filter(Year >= 2025) |>
+    select(State, Year, Population) |>
+    mutate(
+        Population = as.integer(round(Population, 0))
+    ) |>
+    pivot_wider(
+        names_from = Year,
+        values_from = Population
+    ) |>
+    arrange(State)
+
+population_projection_wide |>
+    gt(id = "tbl_population_projection") |>
+    fmt_number(
+        columns = -State,
+        decimals = 0
+    ) |>
+    cols_label(
+        State = "State",
+        `2025` = "2025",
+        `2026` = "2026",
+        `2027` = "2027",
+        `2028` = "2028",
+        `2029` = "2029",
+        `2030` = "2030"
+    ) |>
+    tab_header(
+        title = "Projected Population Estimates per State"
+    )
+```
+
+##TASK 8 Reapproportionment 
+## By 2030, North Carolina could receive 2 additional seats at the House of Representatives. From 2020's allocated seats of 14 to 16 in 2030, population growth is expected. 
+```{r}
+library(tidyverse)
+library(gt)
+
+MAX_DISTRICTS <- 100
+N_DISTRICTS <- 435
+
+apportionment_2030 <- pop_2030 |>
+    mutate(
+        Population = as.numeric(unlist(Population))
+    ) |>
+    filter(
+        State != "District of Columbia",
+        State != "Puerto Rico"
+    ) |>
+    rename(
+        state = State,
+        population = Population
+    ) |>
+    mutate(
+        population = as.integer(round(population, 0))
+    ) |>
+    expand_grid(cd = seq(1, MAX_DISTRICTS)) |>
+    mutate(
+        hh_den = sqrt(cd * (cd + 1)),
+        hh_weight = population / hh_den
+    ) |>
+    slice_max(hh_weight, n = N_DISTRICTS) |>
+    group_by(state) |>
+    summarize(
+        population = first(population),
+        n_districts = n(),
+        .groups = "drop"
+    ) |>
+    mutate(
+        pop_per_district = population / n_districts
+    ) |>
+    arrange(desc(n_districts), desc(population), state)
+
+apportionment_2030
+```
+##TASK 9: Advertising Strategy for North Carolina "Move IT## Here" Campaign
+## It is important to note that in 2020 Pennsylvania has 17 seats for its 13 million residents. 13 million is the projected number for North Carolina in 2030. The US populations grows at about 1%, so it it highly probable that North Carolina can obtain more than 14 seats by 2030 if it reaches over 13 million residents. 
+##JSON Analysis of the most populous county in NC
+```{r}
+library(tidyverse)
+library(gt)
+
+county_data <- read_delim(
+    file.path("data", "mp03", "county_estimates.csv"),
+    delim = ";",
+    show_col_types = FALSE
+) |>
+    rename(
+        FIPS = `﻿FIPS`
+    )
+
+top20_2024 <- county_data |>
+    filter(
+        str_detect(as.character(Year), "2024")
+    ) |>
+    mutate(
+        value = readr::parse_number(as.character(value))
+    ) |>
+    arrange(desc(value)) |>
+    select(
+        `Area Type`,
+        Area,
+        Year,
+        value,
+        Estimate,
+        FIPS
+    ) |>
+    slice_head(n = 20)
+
+top20_2024 |>
+    gt(id = "tbl_top20_2024_county_estimates") |>
+    fmt_number(
+        columns = value,
+        decimals = 0
+    ) |>
+    cols_label(
+        `Area Type` = "Area Type",
+        Area = "Area",
+        Year = "Year",
+        value = "Value",
+        Estimate = "Estimate",
+        FIPS = "FIPS"
+    ) |>
+    tab_header(
+        title = "Top 20 County Estimates for 2024"
+    )
+```
+## Top 10 Most Populous County in North Carolina
+## Charlotte and Raleigh are the MOst populous cities in NC. The Map shows it in red color. 
+```{r}
+library(tidyverse)
+library(sf)
+library(ggplot2)
+library(readr)
+
+
+nc <- read_sf(system.file("shape/nc.shp", package = "sf")) |>
+    mutate(
+        FIPS = stringr::str_pad(as.character(FIPS), width = 5, side = "left", pad = "0")
+    )
+
+
+county_data <- read_delim(
+    file.path("data", "mp03", "county_estimates.csv"),
+    delim = ";",
+    show_col_types = FALSE
+) |>
+    rename(
+        FIPS = `﻿FIPS`
+    ) |>
+    mutate(
+        FIPS = stringr::str_pad(as.character(FIPS), width = 5, side = "left", pad = "0"),
+        value = readr::parse_number(as.character(value))
+    )
+
+
+top10_2024 <- county_data |>
+    filter(
+        str_detect(as.character(Year), "2024"),
+        `Area Type` == "County"
+    ) |>
+    arrange(desc(value)) |>
+    slice_head(n = 10) |>
+    select(
+        FIPS,
+        Area,
+        value
+    )
+
+# top 10 
+nc_top10_map <- nc |>
+    left_join(top10_2024, by = "FIPS") |>
+    mutate(
+        map_value = value
+    )
+
+
+ggplot(nc_top10_map, aes(geometry = geometry, fill = map_value)) +
+    geom_sf(color = "gray40", linewidth = 0.2) +
+    scale_fill_gradient(
+        low = "#fcbba1",
+        high = "#cb181d",
+        na.value = "white",
+        name = "2024 Estimate"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom"
+    ) +
+    labs(
+        title = "Top 10 North Carolina Counties by 2024 Estimate",
+        subtitle = "Top 10 counties shown in red shades; all other counties shown in white"
+    )
+```
+
+##Marketing Plan
+## US Census 2024 ACS-1 Year Estimare reports North Carolina at over 11 million residents. With about half of the population identifying as One Race and the rest Two or More. 
+
+
+##i. Where to advertise:
+## Focus on Raleigh and Charlotte, the two fastest-growing tech-driven metro areas in North Carolina. Raleigh is a growing technology hub. It houses well established ivy schools like Duke University, University of North Carolina at Chapel Hill and North Carolina State University.  Apple and Google have invested heavily in Raleigh's Research Triangle. Google has an engineering hub at Durham. 
+
+##Charlotte is a growing finicial and tech hub of the US. 
+
+##ii. Migration goal:
+##Increase population from 11 million to 13 million by 2030 by attracting IT firms and skilled workers.
+## Attract migration through advertising lower cost of living compared to NY or California. 
+## Increase population by promoting higher quality of life advertisement
+
+##iii. Migration strategy:
+##Target major out-of-state tech hubs (NY, CA) for inbound migration while reducing outflow by promoting North Carolina’s growing tech ecosystem, affordability, and quality of life.
+##Advertisements should be targeted to New York (NYC metro), California (LA, Bay Area)
+## and Florida & Texas (cost-sensitive movers)
+## Reduce migration by promoting technology hubs opportunities and work with local government to stabilize rent and property tax cossts at a minimum to invite more migrants. 
+
+## Marketing Slogan: *Move IT Here*
+
+![Move IT Here Campaign](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjHELRInEdJy8Sq_P4imA2IqqGNOoQO3Ik7BzFZSggOC6kS9CItLnJQMpne4Cl5UdRWuVy5R_gQ4VKua_QZ8SrgcFGF8MTkFbVRGBat7OJsMCzSbV7XTVdN_aA13nP76LIzY2PiuYBC9sJJeBFIieCd_9gO0L5aMWlqfMD5ncE6cr2LBhZfEZfSBXZxVS4/s320/waymo%202026.jpg)
+
+::: {.callout-note collapse="true"}
+## AI Usage Statement
+
+I have used ChatGPT to aid in revisions, debugging and proper renditions of the R codes. I am a Marketing major with minimal programming language forte, but throughout this project, ChatGPT primarily served as a technical assistant to help correct syntax errors, refine coding patterns, and ensure that my pipelines were properly structured and executable. I actively worked through the raw datasets myself, explored their structure, and formulated the analytical direction of the project. The trajectory of the ideas, including the choice of variables, interpretation of migration patterns, and the development of the “Move IT Here” campaign, are fundamentally & originally my own.  
+
+
+:::
