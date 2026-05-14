@@ -1,0 +1,2604 @@
+---
+title: "mp04"
+format: html
+---
+
+
+
+
+```{r}
+#' Load Packages
+
+library(tidyverse)
+library(glue)
+library(httr2)
+library(rvest)
+library(stringr)
+library(fs)
+library(gt)
+
+#' Read Olympedia Page With Cache
+
+read_olympedia <- function(url){
+    
+    if(str_starts(url, "/")){
+        url <- str_remove(url, "/")
+    }
+    
+    cache_dir <- fs::path(
+        "data",
+        "mp04",
+        "olympedia_cache"
+    )
+    
+    if(!fs::dir_exists(cache_dir)){
+        fs::dir_create(
+            cache_dir,
+            recurse = TRUE
+        )
+    }
+    
+    cache_path <- fs::path(
+        cache_dir,
+        url |> 
+            as.character() |> 
+            str_replace_all("/", "_")
+    )
+    
+    if(!fs::file_exists(cache_path)){
+        
+        src_url <- paste0(
+            "https://www.olympedia.org/",
+            url
+        )
+        
+        Sys.sleep(5)
+        
+        request(src_url) |> 
+            req_headers(
+                `User-Agent` = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:149.0) Gecko/20100101 Firefox/149.0"
+            ) |> 
+            req_perform(path = cache_path)
+    }
+    
+    read_html(cache_path)
+}
+
+#' Olympic Editions, 1984-2024
+
+olympic_editions <- tibble(
+    year = c(
+        1984, 1988, 1992, 1996, 2000, 2004,
+        2008, 2012, 2016, 2020, 2024
+    ),
+    edition_id = c(
+        21, 22, 23, 24, 25, 26,
+        53, 54, 59, 61, 63
+    ),
+    city = c(
+        "Los Angeles",
+        "Seoul",
+        "Barcelona",
+        "Atlanta",
+        "Sydney",
+        "Athina",
+        "Beijing",
+        "London",
+        "Rio de Janeiro",
+        "Tokyo",
+        "Paris"
+    ),
+    edition_url = glue("/editions/{edition_id}")
+)
+
+olympic_editions
+```
+
+
+## Top 10 Countries with the Most Medal 1984-2024
+## Top 10 SUmmer Olympics Sports by Viewership Worldwide
+## 1984 onwards is pivotal to a pseudo "world peace." By the early '90s Russia and Germany have consolidated. By the early 21st century, China has fully embraced the world stage and, soon after, hosts the Olympics and nudged the US for the first time in over a decade of Olympics supremacy. Conspicuously, China has rallied behind the US since the early 2000s.
+## Japan has made a comeback by 2020. For a tiny country and a population less than a tenth of China, Japan is on the top 3 contenders. Can it sustain it by 2028?  
+
+```{r}
+#' Top 10 Countries and 10 Major Summer Sports Medal Table
+
+major_summer_sports <- c(
+    "Athletics",
+    "Aquatics",
+    "Gymnastics",
+    "Basketball",
+    "Cycling",
+    "Football",
+    "Tennis",
+    "Volleyball",
+    "Archery",
+    "Boxing"
+)
+
+top_olympic_countries <- c(
+    "United States",
+    "Soviet Union",
+    "China",
+    "Great Britain",
+    "France",
+    "Italy",
+    "Germany",
+    "Japan",
+    "Hungary",
+    "Australia",
+    "Korea"
+)
+
+empty_medal_table <- tibble(
+    edition_id = integer(),
+    edition_roman = character(),
+    edition_url = character(),
+    year = integer(),
+    city = character(),
+    season = character(),
+    sport_group = character(),
+    discipline_name = character(),
+    discipline_url = character(),
+    competitor_country = character(),
+    competitor_iso = character(),
+    gold = integer(),
+    silver = integer(),
+    bronze = integer(),
+    total = integer()
+)
+
+scrape_edition_disciplines <- function(
+    edition_id,
+    year,
+    city
+){
+    
+    page <- read_olympedia(
+        glue("/editions/{edition_id}")
+    )
+    
+    root <- xml2::xml_root(page)
+    
+    links <- root |> 
+        html_elements("a")
+    
+    tibble(
+        discipline_url = links |> 
+            html_attr("href"),
+        discipline_name = links |> 
+            html_text2()
+    ) |> 
+        filter(
+            !is.na(discipline_url),
+            str_detect(
+                discipline_url,
+                glue("^/editions/{edition_id}/sports/")
+            )
+        ) |> 
+        mutate(
+            sport_group = case_when(
+                str_detect(discipline_name, "Athletics") ~ "Athletics",
+                str_detect(discipline_name, "Swimming|Diving|Water Polo|Artistic Swimming|Synchronized Swimming") ~ "Aquatics",
+                str_detect(discipline_name, "Gymnastics") ~ "Gymnastics",
+                str_detect(discipline_name, "Basketball") ~ "Basketball",
+                str_detect(discipline_name, "Cycling") ~ "Cycling",
+                str_detect(discipline_name, "Football") ~ "Football",
+                str_detect(discipline_name, "Table Tennis") ~ NA_character_,
+                str_detect(discipline_name, "Tennis") ~ "Tennis",
+                str_detect(discipline_name, "Volleyball") ~ "Volleyball",
+                str_detect(discipline_name, "Archery") ~ "Archery",
+                str_detect(discipline_name, "Boxing") ~ "Boxing",
+                TRUE ~ NA_character_
+            )
+        ) |> 
+        filter(
+            !is.na(sport_group),
+            sport_group %in% major_summer_sports
+        ) |> 
+        distinct(
+            sport_group,
+            discipline_name,
+            discipline_url
+        ) |> 
+        mutate(
+            edition_id = edition_id,
+            year = year,
+            city = city
+        )
+}
+
+scrape_discipline_medals <- function(
+    edition_id,
+    year,
+    city,
+    sport_group,
+    discipline_name,
+    discipline_url
+){
+    
+    page <- read_olympedia(
+        discipline_url
+    )
+    
+    root <- xml2::xml_root(page)
+    
+    page_text <- root |> 
+        html_text2()
+    
+    edition_roman <- page_text |> 
+        str_extract(
+            "Number and Year\\s+[IVXLCDM]+"
+        ) |> 
+        str_remove(
+            "Number and Year\\s+"
+        )
+    
+    tables <- root |> 
+        html_elements("table")
+    
+    medal_table <- tables |> 
+        map(
+            html_table,
+            fill = TRUE
+        ) |> 
+        keep(
+            \(x){
+                all(
+                    c(
+                        "NOC",
+                        "Gold",
+                        "Silver",
+                        "Bronze",
+                        "Total"
+                    ) %in% names(x)
+                )
+            }
+        ) |> 
+        first()
+    
+    if(is.null(medal_table)){
+        return(empty_medal_table)
+    }
+    
+    medal_table |> 
+        as_tibble(
+            .name_repair = "unique_quiet"
+        ) |> 
+        rename(
+            noc = 1
+        ) |> 
+        transmute(
+            competitor_country = str_squish(
+                str_remove(
+                    noc,
+                    "\\s+[A-Z]{3}$"
+                )
+            ),
+            competitor_iso = str_extract(
+                noc,
+                "[A-Z]{3}$"
+            ),
+            gold = parse_number(
+                as.character(Gold)
+            ),
+            silver = parse_number(
+                as.character(Silver)
+            ),
+            bronze = parse_number(
+                as.character(Bronze)
+            ),
+            total = parse_number(
+                as.character(Total)
+            )
+        ) |> 
+        mutate(
+            competitor_country = case_when(
+                str_detect(
+                    competitor_country,
+                    "United States"
+                ) ~ "United States",
+                str_detect(
+                    competitor_country,
+                    "Soviet Union"
+                ) ~ "Soviet Union",
+                str_detect(
+                    competitor_country,
+                    "People's Republic of China|China"
+                ) ~ "China",
+                str_detect(
+                    competitor_country,
+                    "Great Britain"
+                ) ~ "Great Britain",
+                str_detect(
+                    competitor_country,
+                    "France"
+                ) ~ "France",
+                str_detect(
+                    competitor_country,
+                    "Italy"
+                ) ~ "Italy",
+                str_detect(
+                    competitor_country,
+                    "Germany|West Germany|East Germany"
+                ) ~ "Germany",
+                str_detect(
+                    competitor_country,
+                    "Japan"
+                ) ~ "Japan",
+                str_detect(
+                    competitor_country,
+                    "Hungary"
+                ) ~ "Hungary",
+                str_detect(
+                    competitor_country,
+                    "Australia"
+                ) ~ "Australia",
+                TRUE ~ competitor_country
+            )
+        ) |> 
+        filter(
+            competitor_country %in% 
+                top_olympic_countries
+        ) |> 
+        mutate(
+            edition_id = edition_id,
+            edition_roman = edition_roman,
+            edition_url = glue(
+                "/editions/{edition_id}"
+            ),
+            year = year,
+            city = city,
+            season = "Summer",
+            sport_group = sport_group,
+            discipline_name = discipline_name,
+            discipline_url = discipline_url
+        ) |> 
+        select(
+            edition_id,
+            edition_roman,
+            edition_url,
+            year,
+            city,
+            season,
+            sport_group,
+            discipline_name,
+            discipline_url,
+            competitor_country,
+            competitor_iso,
+            gold,
+            silver,
+            bronze,
+            total
+        )
+}
+
+olympic_major_sports_medals <- olympic_editions |> 
+    mutate(
+        disciplines = pmap(
+            list(
+                edition_id,
+                year,
+                city
+            ),
+            scrape_edition_disciplines
+        )
+    ) |> 
+    select(
+        disciplines
+    ) |> 
+    unnest(
+        disciplines
+    ) |> 
+    mutate(
+        medal_data = pmap(
+            list(
+                edition_id,
+                year,
+                city,
+                sport_group,
+                discipline_name,
+                discipline_url
+            ),
+            scrape_discipline_medals
+        )
+    ) |> 
+    pull(
+        medal_data
+    ) |> 
+    bind_rows()
+
+olympic_major_sports_summary <- olympic_major_sports_medals |> 
+    group_by(
+        year,
+        city,
+        sport_group,
+        competitor_country
+    ) |> 
+    summarize(
+        gold = sum(
+            gold,
+            na.rm = TRUE
+        ),
+        silver = sum(
+            silver,
+            na.rm = TRUE
+        ),
+        bronze = sum(
+            bronze,
+            na.rm = TRUE
+        ),
+        total = sum(
+            total,
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    ) |> 
+    arrange(
+        year,
+        sport_group,
+        desc(total),
+        desc(gold)
+    )
+
+olympic_major_sports_summary |> 
+    gt(
+        id = "tbl_major_summer_sports_medals"
+    ) |> 
+    cols_label(
+        year = "Year",
+        city = "City",
+        sport_group = "Sport",
+        competitor_country = "Country",
+        gold = "Gold",
+        silver = "Silver",
+        bronze = "Bronze",
+        total = "Total"
+    ) |> 
+    tab_spanner(
+        label = "Medal Count",
+        columns = c(
+            gold,
+            silver,
+            bronze,
+            total
+        )
+    ) |> 
+    tab_header(
+        title = "Olympic Medals in Major Summer Sports",
+        subtitle = "Top 10 Countries and 10 Major Summer Sports, 1984-2024"
+    ) |> 
+    tab_source_note(
+        source_note = "Data scraped and cleaned from Olympedia. Medal counts are summed by Summer Olympics, sport, and country."
+    )
+```
+
+##1984 Top Medalist by Country and  Sports
+## Athletics 
+
+
+```{r}
+#' 1984 Medal Totals by Country and Sport
+
+summer_colors <- c(
+    "Athletics" = "#F8766D",
+    "Aquatics" = "#00BFC4",
+    "Gymnastics" = "#C77CFF",
+    "Basketball" = "#F564E3",
+    "Cycling" = "#7CAE00",
+    "Football" = "#00BA38",
+    "Tennis" = "#B79F00",
+    "Volleyball" = "#FFB000",
+    "Archery" = "#E76F51",
+    "Boxing" = "#619CFF"
+)
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 1984
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "1984 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+##1988 Olympics
+```{r}
+#' 1988 Medal Totals by Country and Sport
+
+summer_colors <- c(
+    "Athletics" = "#F8766D",
+    "Aquatics" = "#00BFC4",
+    "Gymnastics" = "#C77CFF",
+    "Basketball" = "#F564E3",
+    "Cycling" = "#7CAE00",
+    "Football" = "#00BA38",
+    "Tennis" = "#B79F00",
+    "Volleyball" = "#FFB000",
+    "Archery" = "#E76F51",
+    "Boxing" = "#619CFF"
+)
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 1988
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "1988 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+##1992
+
+```{r}
+#' 1992 Medal Totals by Country and Sport
+
+summer_colors <- c(
+    "Athletics" = "#F8766D",
+    "Aquatics" = "#00BFC4",
+    "Gymnastics" = "#C77CFF",
+    "Basketball" = "#F564E3",
+    "Cycling" = "#7CAE00",
+    "Football" = "#00BA38",
+    "Tennis" = "#B79F00",
+    "Volleyball" = "#FFB000",
+    "Archery" = "#E76F51",
+    "Boxing" = "#619CFF"
+)
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 1992
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "1992 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+
+##1996
+```{r}
+#' 1996 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 1996
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "1996 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+
+
+##2000
+```{r}
+#' 2000 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2000
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2000 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+
+##2004
+```{r}
+#' 2004 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2004
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2004 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+
+##2008
+```{r}
+#' 2008 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2008
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2008 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+##2012
+```{r}
+#' 2012 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2012
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2012 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+
+##2016
+```{r}
+#' 2016 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2016
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2016 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+##2021
+
+```{r}
+#' 2021 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2020
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2021 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+##2024
+```{r}
+#' 2024 Medal Totals by Country and Sport
+
+olympic_major_sports_summary |> 
+    filter(
+        year == 2024
+    ) |> 
+    mutate(
+        competitor_country = fct_reorder(
+            competitor_country,
+            total,
+            .fun = sum
+        )
+    ) |> 
+    ggplot(
+        aes(
+            x = total,
+            y = competitor_country,
+            fill = sport_group
+        )
+    ) +
+    geom_col() +
+    scale_fill_manual(
+        values = summer_colors
+    ) +
+    labs(
+        title = "2024 Summer Olympic Medals by Country and Sport",
+        subtitle = "Top 10 countries across selected major Summer Olympic sports",
+        x = "Total Medals",
+        y = "Country",
+        fill = "Sport"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold")
+    )
+```
+
+
+## Go for Gold! 
+## For many cultures gold is the true gold standard. It is the ultimate winner, therefore we will look at gold accumulation of the top 10 countries from 1984-2024
+## in 1984, USA hits its all-time high of gold medal, presumably because 14 countries (communism, you know) boycott the show, the game. 
+## There is 1 red dot close to the US. Thats East Germany when it was Eastern. 
+## With the WOrld Order somewhat in order, the 1996 Olympic had 197 countries. This is pivotal as the most number of countries participating in the olympics since its inception. 
+
+
+
+```{r}
+#' All-Sports Olympic Medal Dataset
+
+scrape_edition_medals <- function(
+    edition_id,
+    year,
+    city
+){
+    
+    page <- read_olympedia(
+        glue("/editions/{edition_id}")
+    )
+    
+    root <- xml2::xml_root(page)
+    
+    tables <- root |> 
+        html_elements("table")
+    
+    medal_table <- tables |> 
+        map(
+            html_table,
+            fill = TRUE
+        ) |> 
+        keep(
+            \(x){
+                all(
+                    c(
+                        "NOC",
+                        "Gold",
+                        "Silver",
+                        "Bronze",
+                        "Total"
+                    ) %in% names(x)
+                )
+            }
+        ) |> 
+        first()
+    
+    if(is.null(medal_table)){
+        return(tibble())
+    }
+    
+    medal_table |> 
+        as_tibble(
+            .name_repair = "unique"
+        ) |> 
+        rename(
+            noc = 1
+        ) |> 
+        transmute(
+            competitor_country = str_squish(
+                str_remove(
+                    noc,
+                    "\\s+[A-Z]{3}$"
+                )
+            ),
+            competitor_iso = str_extract(
+                noc,
+                "[A-Z]{3}$"
+            ),
+            gold = parse_number(
+                as.character(Gold)
+            ),
+            silver = parse_number(
+                as.character(Silver)
+            ),
+            bronze = parse_number(
+                as.character(Bronze)
+            ),
+            total = parse_number(
+                as.character(Total)
+            )
+        ) |> 
+        mutate(
+            competitor_country = case_when(
+                str_detect(
+                    competitor_country,
+                    "United States"
+                ) ~ "United States",
+                str_detect(
+                    competitor_country,
+                    "Soviet Union"
+                ) ~ "Soviet Union",
+                str_detect(
+                    competitor_country,
+                    "People's Republic of China|China"
+                ) ~ "China",
+                str_detect(
+                    competitor_country,
+                    "Great Britain"
+                ) ~ "Great Britain",
+                str_detect(
+                    competitor_country,
+                    "France"
+                ) ~ "France",
+                str_detect(
+                    competitor_country,
+                    "Italy"
+                ) ~ "Italy",
+                str_detect(
+                    competitor_country,
+                    "Germany|West Germany|East Germany"
+                ) ~ "Germany",
+                str_detect(
+                    competitor_country,
+                    "Japan"
+                ) ~ "Japan",
+                str_detect(
+                    competitor_country,
+                    "Hungary"
+                ) ~ "Hungary",
+                str_detect(
+                    competitor_country,
+                    "Australia"
+                ) ~ "Australia",
+                TRUE ~ competitor_country
+            ),
+            edition_id = edition_id,
+            year = year,
+            city = city,
+            season = "Summer"
+        )
+}
+
+olympic_medals_1984_2024 <- olympic_editions |> 
+    mutate(
+        medal_data = pmap(
+            list(
+                edition_id,
+                year,
+                city
+            ),
+            scrape_edition_medals
+        )
+    ) |> 
+    pull(
+        medal_data
+    ) |> 
+    bind_rows()
+
+olympic_medals_1984_2024
+```
+
+
+
+##Gold Medal Trends 
+
+```{r}
+
+
+country_colors <- c(
+    "United States" = "#3C3B6E",
+    "Soviet Union" = "#CC0000",
+    "China" = "#DE2910",
+    "Great Britain" = "#012169",
+    "France" = "#0055A4",
+    "Italy" = "#009246",
+    "Germany" = "#000000",
+    "Japan" = "#BC002D",
+    "Hungary" = "#477050",
+    "Australia" = "#FFCD00"
+)
+
+olympic_medals_1984_2024 |> 
+    filter(
+        competitor_country %in% top_olympic_countries
+    ) |> 
+    group_by(
+        year,
+        competitor_country
+    ) |> 
+    summarize(
+        gold_medals = sum(
+            gold,
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    ) |> 
+    ggplot(
+        aes(
+            x = year,
+            y = gold_medals,
+            color = competitor_country
+        )
+    ) +
+    geom_point(
+        size = 4
+    ) +
+    geom_line(
+        linewidth = 1.2
+    ) +
+    scale_color_manual(
+        values = country_colors
+    ) +
+    scale_x_continuous(
+        breaks = c(
+            1984, 1988, 1992, 1996,
+            2000, 2004, 2008, 2012,
+            2016, 2021, 2024
+        )
+    ) +
+    scale_y_continuous(
+        breaks = seq(
+            0,
+            100,
+            10
+        )
+    ) +
+    labs(
+        title = "Total Gold Medal Trends by Country",
+        subtitle = "All Summer Olympic Sports, 1984-2024",
+        x = "Olympic Year",
+        y = "Gold Medals",
+        color = "Country"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(
+            face = "bold"
+        )
+    )
+```
+
+##Scraping Data for New Discipline
+
+```{r}
+#' New Olympic Disciplines Compared to Previous Summer Olympics
+
+scrape_edition_discipline_list <- function(
+    edition_id,
+    year,
+    city
+){
+    
+    page <- read_olympedia(
+        glue("/editions/{edition_id}")
+    )
+    
+    root <- xml2::xml_root(page)
+    
+    links <- root |> 
+        html_elements("a")
+    
+    tibble(
+        discipline_url = links |> 
+            html_attr("href"),
+        discipline_name = links |> 
+            html_text2()
+    ) |> 
+        filter(
+            !is.na(discipline_url),
+            str_detect(
+                discipline_url,
+                glue("^/editions/{edition_id}/sports/")
+            ),
+            discipline_name != ""
+        ) |> 
+        distinct(
+            discipline_name,
+            discipline_url
+        ) |> 
+        mutate(
+            year = year,
+            city = city,
+            edition_id = edition_id,
+            edition_url = glue(
+                "/editions/{edition_id}"
+            )
+        ) |> 
+        select(
+            year,
+            city,
+            edition_id,
+            edition_url,
+            discipline_name,
+            discipline_url
+        )
+}
+
+olympic_disciplines_1984_2024 <- olympic_editions |> 
+    mutate(
+        discipline_data = pmap(
+            list(
+                edition_id,
+                year,
+                city
+            ),
+            scrape_edition_discipline_list
+        )
+    ) |> 
+    pull(
+        discipline_data
+    ) |> 
+    bind_rows()
+
+new_disciplines_by_year <- olympic_disciplines_1984_2024 |> 
+    arrange(
+        year,
+        discipline_name
+    ) |> 
+    group_by(
+        year,
+        city
+    ) |> 
+    summarize(
+        disciplines = list(
+            sort(
+                unique(
+                    discipline_name
+                )
+            )
+        ),
+        .groups = "drop"
+    ) |> 
+    mutate(
+        previous_year = lag(
+            year
+        ),
+        previous_city = lag(
+            city
+        ),
+        previous_disciplines = lag(
+            disciplines
+        ),
+        new_disciplines = map2(
+            disciplines,
+            previous_disciplines,
+            \(current, previous){
+                if(is.null(previous)){
+                    character(0)
+                } else {
+                    setdiff(
+                        current,
+                        previous
+                    )
+                }
+            }
+        )
+    ) |> 
+    filter(
+        year > 1984
+    ) |> 
+    select(
+        year,
+        city,
+        previous_year,
+        previous_city,
+        new_disciplines
+    ) |> 
+    unnest(
+        new_disciplines
+    ) |> 
+    rename(
+        new_discipline = new_disciplines
+    ) |> 
+    arrange(
+        year,
+        new_discipline
+    )
+
+new_disciplines_by_year
+```
+
+## Let us analyze the New Olympic sports added as compared to the previous olympic year. 
+
+```{r}
+#' New Olympic Disciplines by Summer Olympics
+
+new_disciplines_condensed <- new_disciplines_by_year |> 
+    group_by(
+        year,
+        city
+    ) |> 
+    summarize(
+        new_sports = paste(
+            sort(unique(new_discipline)),
+            collapse = ", "
+        ),
+        .groups = "drop"
+    ) |> 
+    left_join(
+        tibble(
+            year = c(
+                1988, 1992, 1996, 2000, 2004,
+                2008, 2012, 2016, 2021, 2024
+            ),
+            host_country = c(
+                "South Korea",
+                "Spain",
+                "United States",
+                "Australia",
+                "Greece",
+                "China",
+                "Great Britain",
+                "Brazil",
+                "Japan",
+                "France"
+            )
+        ),
+        by = "year"
+    ) |> 
+    arrange(
+        year
+    )
+
+new_disciplines_condensed |> 
+    gt(
+        id = "tbl_condensed_new_disciplines"
+    ) |> 
+    cols_label(
+        year = "Olympic Year",
+        city = "Host City",
+        host_country = "Host Country",
+        new_sports = "New Disciplines / Sports"
+    ) |> 
+    cols_width(
+        new_sports ~ px(650)
+    ) |> 
+    tab_header(
+        title = "New Olympic Disciplines by Summer Olympics",
+        subtitle = "New disciplines compared with the previous Summer Olympics, 1988-2024"
+    ) |> 
+    tab_source_note(
+        source_note = "Data scraped and cleaned from Olympedia edition pages."
+    )
+```
+
+##With the newly added sports, let us compare the previous two olympics performance by the host country and compare it to the previous years they hosted. \
+## Korea has extra controvery with North Korea, but our data shows that in 1984, they had a total of 19, and when then hosted in 1996 it increased to 33.
+## There is increase in the total number of medals compared to the last two or three olympics. The US is the only one that consistently bags close to 100 medals and hosting the olympics didnt make much any difference. 
+
+```{r}
+#' Host Country Medal Performance Before and During Hosting
+
+host_olympics <- tibble(
+    host_year = c(
+        1988, 1992, 1996, 2000, 2004,
+        2008, 2012, 2016, 2020, 2024
+    ),
+    host_city = c(
+        "Seoul", "Barcelona", "Atlanta", "Sydney", "Athina",
+        "Beijing", "London", "Rio de Janeiro", "Tokyo", "Paris"
+    ),
+    host_country = c(
+        "Korea",
+        "Spain",
+        "United States",
+        "Australia",
+        "Greece",
+        "China",
+        "Great Britain",
+        "Brazil",
+        "Japan",
+        "France"
+    )
+)
+
+host_medal_comparison <- host_olympics |> 
+    mutate(
+        comparison_years = map(
+            host_year,
+            \(x){
+                olympic_editions |> 
+                    filter(year <= x) |> 
+                    arrange(desc(year)) |> 
+                    slice_head(n = 4) |> 
+                    pull(year)
+            }
+        )
+    ) |> 
+    unnest(comparison_years) |> 
+    left_join(
+        olympic_medals_1984_2024,
+        by = c("comparison_years" = "year")
+    ) |> 
+    filter(
+        case_when(
+            host_country == "Korea" ~
+                str_detect(competitor_country, "Korea") &
+                !str_detect(competitor_country, "Democratic"),
+            TRUE ~ competitor_country == host_country
+        )
+    ) |> 
+    group_by(
+        host_year,
+        host_city,
+        host_country,
+        comparison_years
+    ) |> 
+    summarize(
+        total_medals = sum(total, na.rm = TRUE),
+        .groups = "drop"
+    ) |> 
+    mutate(
+        host_label = glue("{host_year} {host_country}"),
+        year_type = if_else(
+            comparison_years == host_year,
+            "Host Year",
+            "Previous Olympics"
+        ),
+        comparison_label = glue("{comparison_years} ({year_type})")
+    )
+
+host_medal_comparison |> 
+    ggplot(
+        aes(
+            x = host_label,
+            y = total_medals,
+            fill = comparison_label
+        )
+    ) +
+    geom_col(
+        position = "dodge"
+    ) +
+    labs(
+        title = "Host Country Medal Performance Before and During Hosting",
+        subtitle = "Total medals in the host year plus the previous three Summer Olympics",
+        x = "Host Olympics",
+        y = "Total Medals",
+        fill = "Olympic Year"
+    ) +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(
+            angle = 45,
+            hjust = 1
+        )
+    )
+```
+## Independent Analysis : 2008-2024 Most Recent Contenders for Summer Olympics 
+##Competition Heats Up. Let us analyze the top contenders for todal medals from 2008-2024. Why 2008-2024? because that is the pivotal period of open grade by many Asian countries to the Western world, particularly the consolidation and direction of China and its neighboring countries. 
+## The world misses Russia by 2024 and the world stage is once again in havoc with countries boycotting or rejecting the game. From the cold war to the drone wars today, the Olympics is again the epitomy of world rivalry and controversies.  
+
+```{r}
+
+
+main_contenders <- c(
+    "United States",
+    "China",
+    "Great Britain",
+    "Germany",
+    "Australia",
+    "Japan"
+)
+
+contender_medals_2008_2024 <- olympic_medals_1984_2024 |> 
+    filter(
+        year >= 2008,
+        year <= 2024,
+        competitor_country %in% main_contenders
+    ) |> 
+    select(
+        year,
+        city,
+        competitor_country,
+        gold,
+        silver,
+        bronze,
+        total
+    )
+
+contender_medals_2008_2024
+```
+
+
+## Independent Analysis : USA vs CHINA. 
+##Since China won the most gold in the 2008 olympics and the controversies surrounding its extra "young" athletes, severe pressure of the athletes, it make one curious about the direction of this country in terms of ssports. 
+## T-Test addresses the quetion: Is the average Olympic medal total for the United States significantly different from China between 2008–2024? Since the Null Hypothesis  for this two-sample t-test baed on the total medals of both countries from 2008-2024, ##Null Hypothesis is The mean total Olympic medals won by the US is equal to China. Since p-value is .00712, well below .05 standard significance, null hypothesis is rejected. 
+
+```{r}
+
+#' Base R T-Test: USA vs China Total Medals
+
+contender_medals_2008_2024 |> 
+    filter(
+        competitor_country %in% c(
+            "United States",
+            "China"
+        )
+    ) |> 
+    t.test(
+        total ~ competitor_country,
+        data = _
+    )
+```
+
+## Independent Analysis :T-Test SUmmation for the top contenders against the US
+
+```{r}
+#' T-Tests Comparing USA Against Other Major Olympic Countries
+
+comparison_countries <- c(
+    "China",
+    "Great Britain",
+    "Germany",
+    "Australia",
+    "Japan"
+)
+
+usa_t_test_results <- map_dfr(
+    comparison_countries,
+    \(country_name){
+        
+        test_result <- contender_medals_2008_2024 |> 
+            filter(
+                competitor_country %in% c(
+                    "United States",
+                    country_name
+                )
+            ) |> 
+            t.test(
+                total ~ competitor_country,
+                data = _
+            )
+        
+        tibble(
+            comparison_country = country_name,
+            usa_mean_medals = contender_medals_2008_2024 |> 
+                filter(
+                    competitor_country == "United States"
+                ) |> 
+                summarize(
+                    mean_total = mean(total)
+                ) |> 
+                pull(mean_total),
+            comparison_mean_medals = contender_medals_2008_2024 |> 
+                filter(
+                    competitor_country == country_name
+                ) |> 
+                summarize(
+                    mean_total = mean(total)
+                ) |> 
+                pull(mean_total),
+            t_statistic = test_result$statistic,
+            degrees_freedom = test_result$parameter,
+            p_value = test_result$p.value
+        )
+    }
+)
+
+usa_t_test_results |> 
+    mutate(
+        usa_mean_medals = round(
+            usa_mean_medals,
+            2
+        ),
+        comparison_mean_medals = round(
+            comparison_mean_medals,
+            2
+        ),
+        t_statistic = round(
+            t_statistic,
+            3
+        ),
+        degrees_freedom = round(
+            degrees_freedom,
+            2
+        ),
+        p_value = round(
+            p_value,
+            5
+        )
+    ) |> 
+    gt(
+        id = "tbl_usa_t_tests"
+    ) |> 
+    cols_label(
+        comparison_country = "Comparison Country",
+        usa_mean_medals = "USA Mean Medals",
+        comparison_mean_medals = "Country Mean Medals",
+        t_statistic = "t Statistic",
+        degrees_freedom = "Degrees of Freedom",
+        p_value = "P-Value"
+    ) |> 
+    tab_header(
+        title = "Welch Two-Sample T-Tests: USA vs Major Olympic Countries",
+        subtitle = "Summer Olympics Medal Totals, 2008-2024"
+    ) |> 
+    fmt_number(
+        columns = c(
+            usa_mean_medals,
+            comparison_mean_medals,
+            t_statistic,
+            degrees_freedom,
+            p_value
+        ),
+        decimals = 3
+    ) |> 
+    tab_source_note(
+        source_note = "Welch two-sample t-tests comparing total Olympic medal counts between the United States and selected major Olympic countries."
+    )
+```
+## Independent Analysis : Major Contenders Proportion Test
+## Gold and red are the emblematic colors of China. To other cultures, amassing more medals is the best. Not for China. Its gold or nothing.  This Proportation table shows that China has the highest proportion of Gold from 2008 -2024 and the US has the most number of medals.  
+##Curiously, Japan has been aggressive since hosting the 2020 Olympics, keeping in par with the political might of the US and China. Germany and the Great Britain are never far behind. Except for China, all countries have proportion of about 30% of Gold medals. 
+```{r}
+
+
+main_contenders <- c(
+    "United States",
+    "China",
+    "Great Britain",
+    "Germany",
+    "Australia",
+    "Japan"
+)
+
+gold_prop_results <- contender_medals_2008_2024 |> 
+    filter(
+        competitor_country %in% main_contenders
+    ) |> 
+    group_by(
+        competitor_country
+    ) |> 
+    summarize(
+        total_gold = sum(
+            gold,
+            na.rm = TRUE
+        ),
+        total_medals = sum(
+            total,
+            na.rm = TRUE
+        ),
+        gold_proportion = total_gold / total_medals,
+        .groups = "drop"
+    ) |> 
+    mutate(
+        prop_test_result = map2(
+            total_gold,
+            total_medals,
+            \(x, n){
+                prop.test(
+                    x = x,
+                    n = n
+                )
+            }
+        )
+    ) |> 
+    mutate(
+        p_value = map_dbl(
+            prop_test_result,
+            "p.value"
+        ),
+        conf_low = map_dbl(
+            prop_test_result,
+            \(x){
+                x$conf.int[1]
+            }
+        ),
+        conf_high = map_dbl(
+            prop_test_result,
+            \(x){
+                x$conf.int[2]
+            }
+        )
+    ) |> 
+    select(
+        competitor_country,
+        total_gold,
+        total_medals,
+        gold_proportion,
+        conf_low,
+        conf_high,
+        p_value
+    )
+
+gold_prop_results |> 
+    mutate(
+        gold_proportion = round(
+            gold_proportion,
+            3
+        ),
+        conf_low = round(
+            conf_low,
+            3
+        ),
+        conf_high = round(
+            conf_high,
+            3
+        ),
+        p_value = round(
+            p_value,
+            5
+        )
+    ) |> 
+    gt(
+        id = "tbl_gold_prop_tests"
+    ) |> 
+    cols_label(
+        competitor_country = "Country",
+        total_gold = "Total Gold Medals",
+        total_medals = "Total Medals",
+        gold_proportion = "Gold Medal Proportion",
+        conf_low = "95% CI Lower",
+        conf_high = "95% CI Upper",
+        p_value = "P-Value"
+    ) |> 
+    tab_header(
+        title = "Olympic Gold Medal Proportion Tests",
+        subtitle = "Major Olympic Countries, Summer Olympics 2008-2024"
+    ) |> 
+    fmt_percent(
+        columns = c(
+            gold_proportion,
+            conf_low,
+            conf_high
+        ),
+        decimals = 1
+    ) |> 
+    fmt_number(
+        columns = p_value,
+        decimals = 5
+    ) |> 
+    tab_source_note(
+        source_note = "Proportion tests evaluate the share of medals that were gold medals for each country."
+    )
+```
+
+## TASK 4 :  Based on Mini Project Process
+```{r}
+#' Confidence Intervals:
+#' Average USA Gold, Silver, and Bronze Medals
+#' Summer Olympics, 1984-2024
+
+library(tidyverse)
+library(infer)
+library(gt)
+
+usa_medals_1984_2024 <- olympic_medals_1984_2024 |> 
+    filter(
+        competitor_country == "United States"
+    ) |> 
+    select(
+        year,
+        city,
+        gold,
+        silver,
+        bronze
+    )
+
+# =========================================================
+# Gold Medal Confidence Interval
+# =========================================================
+
+gold_ci <- usa_medals_1984_2024 |> 
+    specify(
+        response = gold
+    ) |> 
+    generate(
+        reps = 5000,
+        type = "bootstrap"
+    ) |> 
+    calculate(
+        stat = "mean"
+    ) |> 
+    get_confidence_interval(
+        level = 0.95,
+        type = "percentile"
+    ) |> 
+    mutate(
+        medal_type = "Gold",
+        average_medals = mean(
+            usa_medals_1984_2024$gold
+        )
+    )
+
+# =========================================================
+# Silver Medal Confidence Interval
+# =========================================================
+
+silver_ci <- usa_medals_1984_2024 |> 
+    specify(
+        response = silver
+    ) |> 
+    generate(
+        reps = 5000,
+        type = "bootstrap"
+    ) |> 
+    calculate(
+        stat = "mean"
+    ) |> 
+    get_confidence_interval(
+        level = 0.95,
+        type = "percentile"
+    ) |> 
+    mutate(
+        medal_type = "Silver",
+        average_medals = mean(
+            usa_medals_1984_2024$silver
+        )
+    )
+
+# =========================================================
+# Bronze Medal Confidence Interval
+# =========================================================
+
+bronze_ci <- usa_medals_1984_2024 |> 
+    specify(
+        response = bronze
+    ) |> 
+    generate(
+        reps = 5000,
+        type = "bootstrap"
+    ) |> 
+    calculate(
+        stat = "mean"
+    ) |> 
+    get_confidence_interval(
+        level = 0.95,
+        type = "percentile"
+    ) |> 
+    mutate(
+        medal_type = "Bronze",
+        average_medals = mean(
+            usa_medals_1984_2024$bronze
+        )
+    )
+
+# =========================================================
+# Combine Results
+# =========================================================
+
+bind_rows(
+    gold_ci,
+    silver_ci,
+    bronze_ci
+) |> 
+    select(
+        medal_type,
+        average_medals,
+        lower_ci,
+        upper_ci
+    ) |> 
+    gt(
+        id = "tbl_usa_medal_confidence_intervals"
+    ) |> 
+    cols_label(
+        medal_type = "Medal Type",
+        average_medals = "Average Medals",
+        lower_ci = "95% CI Lower",
+        upper_ci = "95% CI Upper"
+    ) |> 
+    fmt_number(
+        columns = c(
+            average_medals,
+            lower_ci,
+            upper_ci
+        ),
+        decimals = 2
+    ) |> 
+    tab_header(
+        title = "USA Olympic Medal Confidence Intervals",
+        subtitle = "Summer Olympics, 1984-2024"
+    ) |> 
+    tab_source_note(
+        source_note = "Confidence intervals generated using bootstrap resampling with the infer package."
+    )
+```
+
+## Percent Increase by Gold, Silver and Bronze Medals by Host Country
+## Shows all positive increase of gold medals for host country. 
+## Except for the US (focused on Gold), all host countries had positive results for SIlver
+##From 1984s to 2024, host countries' number of Bronze medal decrease. This is due to the host country's focus to go for Gold. 
+
+
+```{r}
+#' Percent Increase in Host Country Medal Counts
+#' Compared to the Previous Summer Olympics
+
+host_countries <- tibble(
+    host_year = c(
+        1988, 1992, 1996, 2000, 2004,
+        2008, 2012, 2016, 2020, 2024
+    ),
+    host_city = c(
+        "Seoul",
+        "Barcelona",
+        "Atlanta",
+        "Sydney",
+        "Athina",
+        "Beijing",
+        "London",
+        "Rio de Janeiro",
+        "Tokyo",
+        "Paris"
+    ),
+    host_country = c(
+        "Republic of Korea",
+        "Spain",
+        "United States",
+        "Australia",
+        "Greece",
+        "China",
+        "Great Britain",
+        "Brazil",
+        "Japan",
+        "France"
+    )
+)
+
+get_country_medals <- function(target_year, target_country, medal_col){
+    
+    olympic_medals_1984_2024 |> 
+        filter(
+            year == target_year,
+            competitor_country == target_country
+        ) |> 
+        summarize(
+            medals = sum(
+                .data[[medal_col]],
+                na.rm = TRUE
+            )
+        ) |> 
+        pull(medals)
+}
+
+host_medal_percent_change <- host_countries |> 
+    mutate(
+        previous_year = map_dbl(
+            host_year,
+            \(x){
+                olympic_editions |> 
+                    filter(
+                        year < x
+                    ) |> 
+                    arrange(
+                        desc(year)
+                    ) |> 
+                    slice_head(
+                        n = 1
+                    ) |> 
+                    pull(year)
+            }
+        ),
+        previous_gold = map2_dbl(
+            previous_year,
+            host_country,
+            \(yr, country){
+                get_country_medals(yr, country, "gold")
+            }
+        ),
+        host_year_gold = map2_dbl(
+            host_year,
+            host_country,
+            \(yr, country){
+                get_country_medals(yr, country, "gold")
+            }
+        ),
+        percent_increase_gold = (
+            (host_year_gold - previous_gold) /
+                previous_gold
+        ) * 100,
+        previous_silver = map2_dbl(
+            previous_year,
+            host_country,
+            \(yr, country){
+                get_country_medals(yr, country, "silver")
+            }
+        ),
+        host_year_silver = map2_dbl(
+            host_year,
+            host_country,
+            \(yr, country){
+                get_country_medals(yr, country, "silver")
+            }
+        ),
+        percent_increase_silver = (
+            (host_year_silver - previous_silver) /
+                previous_silver
+        ) * 100,
+        previous_bronze = map2_dbl(
+            previous_year,
+            host_country,
+            \(yr, country){
+                get_country_medals(yr, country, "bronze")
+            }
+        ),
+        host_year_bronze = map2_dbl(
+            host_year,
+            host_country,
+            \(yr, country){
+                get_country_medals(yr, country, "bronze")
+            }
+        ),
+        percent_increase_bronze = (
+            (host_year_bronze - previous_bronze) /
+                previous_bronze
+        ) * 100
+    )
+
+host_medal_percent_change |> 
+    select(
+        host_year,
+        host_city,
+        host_country,
+        previous_year,
+        previous_gold,
+        host_year_gold,
+        percent_increase_gold,
+        previous_silver,
+        host_year_silver,
+        percent_increase_silver,
+        previous_bronze,
+        host_year_bronze,
+        percent_increase_bronze
+    ) |> 
+    gt(
+        id = "tbl_host_medal_percent_change"
+    ) |> 
+    cols_label(
+        host_year = "Host Olympic Year",
+        host_city = "Host City",
+        host_country = "Host Country",
+        previous_year = "Previous Olympics",
+        previous_gold = "Previous Gold",
+        host_year_gold = "Host Year Gold",
+        percent_increase_gold = "Gold % Increase",
+        previous_silver = "Previous Silver",
+        host_year_silver = "Host Year Silver",
+        percent_increase_silver = "Silver % Increase",
+        previous_bronze = "Previous Bronze",
+        host_year_bronze = "Host Year Bronze",
+        percent_increase_bronze = "Bronze % Increase"
+    ) |> 
+    fmt_percent(
+        columns = c(
+            percent_increase_gold,
+            percent_increase_silver,
+            percent_increase_bronze
+        ),
+        scale_values = FALSE,
+        decimals = 1
+    ) |> 
+    tab_header(
+        title = "Percent Increase in Host Country Medal Counts",
+        subtitle = "Compared to the Previous Summer Olympics"
+    )
+```
+
+##Probability the Host Country's Gold, Silver and Bronze
+## This answers the question of the host country added one gold/silver /bronze with the newly added sport. WHats the probability?
+## On average, about 15% probability to gain a medal for every sport event added by the host country. 
+```{r}
+
+
+library(tidyverse)
+library(gt)
+
+host_countries <- tibble(
+    year = c(
+        1984, 1988, 1992, 1996, 2000,
+        2004, 2008, 2012, 2016, 2020, 2024
+    ),
+    city = c(
+        "Los Angeles",
+        "Seoul",
+        "Barcelona",
+        "Atlanta",
+        "Sydney",
+        "Athina",
+        "Beijing",
+        "London",
+        "Rio de Janeiro",
+        "Tokyo",
+        "Paris"
+    ),
+    host_country = c(
+        "United States",
+        "Republic of Korea",
+        "Spain",
+        "United States",
+        "Australia",
+        "Greece",
+        "China",
+        "Great Britain",
+        "Brazil",
+        "Japan",
+        "France"
+    )
+)
+
+host_new_sport_medals <- new_disciplines_by_year |> 
+    left_join(
+        host_countries,
+        by = c(
+            "year",
+            "city"
+        )
+    ) |> 
+    left_join(
+        olympic_major_sports_medals,
+        by = c(
+            "year",
+            "city",
+            "new_discipline" = "discipline_name"
+        )
+    ) |> 
+    filter(
+        !is.na(host_country),
+        !is.na(competitor_country)
+    )
+
+# =========================================================
+# Gold Medal Probability
+# =========================================================
+
+gold_probability <- host_new_sport_medals |> 
+    summarize(
+        host_gold_medals = sum(
+            gold[
+                competitor_country == host_country
+            ],
+            na.rm = TRUE
+        ),
+        total_gold_medals = sum(
+            gold,
+            na.rm = TRUE
+        )
+    ) |> 
+    mutate(
+        medal_type = "Gold",
+        probability =
+            host_gold_medals /
+                total_gold_medals
+    )
+
+# =========================================================
+# Silver Medal Probability
+# =========================================================
+
+silver_probability <- host_new_sport_medals |> 
+    summarize(
+        host_silver_medals = sum(
+            silver[
+                competitor_country == host_country
+            ],
+            na.rm = TRUE
+        ),
+        total_silver_medals = sum(
+            silver,
+            na.rm = TRUE
+        )
+    ) |> 
+    mutate(
+        medal_type = "Silver",
+        probability =
+            host_silver_medals /
+                total_silver_medals
+    )
+
+# =========================================================
+# Bronze Medal Probability
+# =========================================================
+
+bronze_probability <- host_new_sport_medals |> 
+    summarize(
+        host_bronze_medals = sum(
+            bronze[
+                competitor_country == host_country
+            ],
+            na.rm = TRUE
+        ),
+        total_bronze_medals = sum(
+            bronze,
+            na.rm = TRUE
+        )
+    ) |> 
+    mutate(
+        medal_type = "Bronze",
+        probability =
+            host_bronze_medals /
+                total_bronze_medals
+    )
+
+# =========================================================
+# Combine Results
+# =========================================================
+
+host_medal_probabilities <- bind_rows(
+    gold_probability,
+    silver_probability,
+    bronze_probability
+)
+
+host_medal_probabilities |> 
+    select(
+        medal_type,
+        probability
+    ) |> 
+    gt(
+        id = "tbl_host_new_sport_medal_probabilities"
+    ) |> 
+    cols_label(
+        medal_type = "Medal Type",
+        probability = "Probability Host Country Wins Medal"
+    ) |> 
+    fmt_percent(
+        columns = probability,
+        decimals = 1
+    ) |> 
+    tab_header(
+        title = "Probability Host Country Wins Medals in Newly Added Sports",
+        subtitle = "Summer Olympics, 1984-2024"
+    ) |> 
+    tab_source_note(
+        source_note = "Probability calculated as the share of medals in newly added sports won by the host country."
+    )
+```
+
+##TASK 5: Combining Confidence Interval Using Monte Carlo SImulation
+##USA could possibly win , with the highest probability, around 125-140 Olympic medals
+```{r}
+#' Monte Carlo Forecast for Team USA Medals
+#' Los Angeles 2028 Summer Olympics
+
+library(tidyverse)
+library(gt)
+
+set.seed(2028)
+
+# =========================================================
+# Step 1: USA Total Medals in Recent Olympics
+# =========================================================
+
+usa_recent_medals <- olympic_medals_1984_2024 |> 
+    filter(
+        competitor_country == "United States",
+        year >= 2008
+    ) |> 
+    select(
+        year,
+        total
+    )
+
+usa_recent_medals
+
+# =========================================================
+# Step 2: Estimate Confidence Interval
+# for USA Total Medals
+# =========================================================
+
+usa_mean_medals <- mean(
+    usa_recent_medals$total
+)
+
+usa_sd_medals <- sd(
+    usa_recent_medals$total
+)
+
+usa_n <- nrow(
+    usa_recent_medals
+)
+
+usa_se_medals <- usa_sd_medals /
+    sqrt(usa_n)
+
+usa_ci_lower <- usa_mean_medals -
+    qnorm(0.975) * usa_se_medals
+
+usa_ci_upper <- usa_mean_medals +
+    qnorm(0.975) * usa_se_medals
+
+# =========================================================
+# Step 3: Additional Medal Events in 2028
+# =========================================================
+
+additional_events <- 22
+
+# =========================================================
+# Step 4: Estimate USA Medal Gain Per Added Event
+# =========================================================
+
+# Approximate USA medal success rate
+# based on recent Summer Olympics
+
+usa_medal_rate <- mean(
+    usa_recent_medals$total /
+        max(usa_recent_medals$total)
+)
+
+# Approximate uncertainty
+
+usa_rate_sd <- 0.05
+
+# =========================================================
+# Step 5: Monte Carlo Simulation
+# =========================================================
+
+simulation_count <- 100000
+
+baseline_samples <- rnorm(
+    simulation_count,
+    mean = usa_mean_medals,
+    sd = usa_se_medals
+)
+
+event_gain_samples <- rnorm(
+    simulation_count,
+    mean = usa_medal_rate,
+    sd = usa_rate_sd
+)
+
+usa_2028_samples <- baseline_samples +
+    (
+        additional_events *
+            event_gain_samples
+    )
+
+# =========================================================
+# Step 6: 95% Confidence Interval
+# =========================================================
+
+usa_2028_interval <- quantile(
+    usa_2028_samples,
+    probs = c(
+        0.025,
+        0.975
+    )
+)
+
+usa_2028_forecast <- tibble(
+    statistic = c(
+        "Estimated Mean Medals",
+        "95% CI Lower",
+        "95% CI Upper"
+    ),
+    value = c(
+        mean(
+            usa_2028_samples
+        ),
+        usa_2028_interval[1],
+        usa_2028_interval[2]
+    )
+)
+
+usa_2028_forecast |> 
+    gt(
+        id = "tbl_usa_2028_forecast"
+    ) |> 
+    cols_label(
+        statistic = "Forecast Statistic",
+        value = "Projected Medal Count"
+    ) |> 
+    fmt_number(
+        columns = value,
+        decimals = 1
+    ) |> 
+    tab_header(
+        title = "Monte Carlo Forecast for Team USA at LA 2028",
+        subtitle = "Projected Total Olympic Medal Counts"
+    ) |> 
+    tab_source_note(
+        source_note = "Forecast generated using Monte Carlo simulation with 100,000 simulated Olympic outcomes."
+    )
+
+# =========================================================
+# Step 7: Distribution Plot
+# =========================================================
+
+tibble(
+    simulated_medals =
+        usa_2028_samples
+) |> 
+    ggplot(
+        aes(
+            x = simulated_medals
+        )
+    ) +
+    geom_histogram(
+        bins = 40,
+        fill = "dodgerblue3",
+        color = "white"
+    ) +
+    labs(
+        title = "Monte Carlo Simulation Distribution",
+        subtitle = "Projected Team USA Medal Counts at LA 2028",
+        x = "Projected Total Medals",
+        y = "Frequency"
+    ) +
+    theme_bw()
+```
+##Independent Analysis of US Total Medals with Gold Medals
+
+
+
+```{r}
+
+
+usa_medals <- olympic_medals_1984_2024 |> 
+    filter(
+        str_detect(
+            competitor_country,
+            "United States"
+        )
+    ) |> 
+    group_by(
+        year
+    ) |> 
+    summarize(
+        gold = sum(
+            gold,
+            na.rm = TRUE
+        ),
+        total = sum(
+            total,
+            na.rm = TRUE
+        ),
+        .groups = "drop"
+    ) |> 
+    arrange(
+        year
+    )
+
+usa_medals
+
+usa_medals |> 
+    ggplot(
+        aes(
+            x = year
+        )
+    ) +
+    geom_line(
+        aes(y = total),
+        color = "navy",
+        linewidth = 1.5
+    ) +
+    geom_point(
+        aes(y = total),
+        color = "dodgerblue3",
+        size = 4
+    ) +
+    geom_line(
+        aes(y = gold),
+        color = "goldenrod2",
+        linewidth = 1.5
+    ) +
+    geom_point(
+        aes(y = gold),
+        color = "gold",
+        size = 4
+    ) +
+    geom_text(
+        aes(
+            y = total,
+            label = total
+        ),
+        vjust = -1,
+        color = "navy",
+        fontface = "bold",
+        size = 3
+    ) +
+    geom_text(
+        aes(
+            y = gold,
+            label = gold
+        ),
+        vjust = 1.8,
+        color = "goldenrod4",
+        fontface = "bold",
+        size = 3
+    ) +
+    annotate(
+        "text",
+        x = 2025,
+        y = max(usa_medals$total, na.rm = TRUE),
+        label = "🇺🇸",
+        size = 10
+    ) +
+    scale_x_continuous(
+        breaks = c(
+            1984, 1988, 1992, 1996,
+            2000, 2004, 2008, 2012,
+            2016, 2020, 2024
+        )
+    ) +
+    scale_y_continuous(
+        breaks = seq(
+            0,
+            150,
+            25
+        )
+    ) +
+    labs(
+        title = "Team USA Olympic Medal Trends",
+        subtitle = "Gold Medals and Total Medals, Summer Olympics 1984-2024",
+        x = "Olympic Year",
+        y = "Number of Medals"
+    ) +
+    theme_bw() +
+    theme(
+        plot.title = element_text(
+            face = "bold",
+            size = 16
+        ),
+        axis.text.x = element_text(
+            angle = 45,
+            hjust = 1
+        )
+    )
+```
+
+##AT LAST THE FINAL DELIVERABLE
+
+## Forecast Team Report
+
+![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrqh3XBJtl6mxJIS-3PJpCIywhMzcQrCy2eZZdLV2JEBOvN6xApOSAexHQuBxeOIU8OU27Tgtq8CalirNlAiEUowD0nFsnO8QegO4QQBCgF5iX__wC9pifBYuU6epiBAgOqeQlA8SrbB4ZHNknnILpCQJznoifjFS0H6f6gr5rcx_lES7bfbuswplwDQ4/s1019/olympics.jpg){fig-align="center" width="85%"}
+
+*Forecasting Team USA's Olympic performance for the Los Angeles 2028 Summer Olympics.*
+
+##More ANalysis##Nearly every host country experienced positive increases in gold and silver medals when hosting.
+##Bronze medal counts often decline for host countries, suggesting strategic focus toward elite gold-medal performance.Korea increased from 19 total medals in 1984 to 33 medals when hosting Seoul 1988.Spain surged from only 1 gold medal in the previous Olympics to 13 gold medals when hosting Barcelona 1992.China’s rise accelerated dramatically after hosting Beijing 2008.
+
+##The United States stands apart because its medal counts remain consistently elite even without host advantage. Hosting LA 2028 therefore adds upside to an already dominant baseline.
+
+##Monte Carlo Forecast: Team USA at LA 2028
+
+##Using Monte Carlo simulation methods, we generated thousands of simulated Olympic outcomes based on: Team USA is highly likely to remain the overall medal leader in LA 2028.Total medal counts are expected to remain near or above recent Olympic averages.Additional medal events create further upside potential for Team USA.
+
+##This gives potential sponsors strong statistical evidence that Team USA will remain one of the central success stories of the LA 2028 Games.
+
+
+::: {.callout-note collapse="true"}
+## Generative AI Usage Statement
+
+ChatGPT has been utilized for this Mini Project to help check, revise, and troubleshoot R codes, as well as provide coding structures that matched my personal analyses and overall direction for Mini Project 04. Many of the analytical ideas, interpretations, Olympic comparisons, geopolitical discussions, and written observations in this project were independently developed and guided by my own reasoning and interests regarding Olympic history, medal trends, and international competition. Generative AI primarily assisted in improving coding efficiency, debugging pipelines, refining visualizations, and helping translate my analytical ideas into functional Quarto and R Markdown outputs. My BLOG photo about this report is homemade, not AI. 
+:::
+
