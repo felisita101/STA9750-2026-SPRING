@@ -1,0 +1,192 @@
+---
+title: "Do Online Mental Health Apps Actually Reach the People Who Need Them Most?"
+subtitle: "A Data-Driven Investigation into Telehealth Equity in the United States"
+author:
+  - name: Dhwanika Narang
+  - name: Helly Harshad Shah
+  - name: Khushwant Khatri
+  - name: Felisita Cheung
+date: "May 2026"
+
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    theme: cosmo
+    smooth-scroll: true
+    page-layout: article
+    number-sections: false
+    code-fold: true
+    embed-resources: true
+    fig-align: center
+    fig-cap-location: bottom
+
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# The Problem Nobody Is Solving
+
+Fifty-seven percent of American adults living with a diagnosed mental illness receive no treatment at all. Not inadequate treatment. No treatment.
+
+At the same time, the global market for online mental health platforms surpassed five billion dollars in 2024, with BetterHelp and Teladoc alone generating \$2.57 billion in revenue. Five hundred million mental health app downloads have been recorded worldwide. By every headline metric, the industry is booming.
+
+And yet the treatment gap persists.
+
+This tension is the animating force behind our project. If telehealth platforms are growing this fast, are they actually reaching the people who need them most: low-income adults, racial and ethnic minorities, older adults in medically underserved areas? Or is the boom concentrated among people who would have found care anyway?
+
+> **Do online mental health apps actually reach the people who need them most, and if not, where is the biggest opportunity to fix that?**
+
+To answer this question, we divided the problem into four specific analyses targeting demand, supply, equity, and geography.
+
+---
+
+# What We Already Knew: Situating the Project in Prior Work
+
+Our project builds directly on four foundational studies.
+
+- Mojtabai et al. (2016)
+- Torous et al. (2021)
+- McBain et al. (2023)
+- Fortney et al. (2015)
+
+Each of these studies examined only one dimension of the access problem at a time. Our project instead combines income, age, race, and geography simultaneously using post-pandemic 2024 data.
+
+---
+
+# Data: What We Used and Why It Has Limits
+
+## CDC BRFSS 2024
+
+The CDC BRFSS 2024 dataset (`n = 457,670`) served as the primary source for individual-level mental health burden.
+
+The primary variables used included:
+
+- `ADDEPEV3`
+- `MENTHLTH`
+- `_LLCPWT`
+- `_METSTAT`
+- `SEXVAR`
+- `_AGE80`
+
+A limitation is that the dedicated telehealth variable was removed from the 2024 BRFSS survey instrument. Therefore, diagnosed depression was used as a proxy for mental health need.
+
+---
+
+## ACS 2024 PUMS
+
+The ACS 2024 PUMS dataset provided income, occupation, and geographic variables.
+
+Primary variables included:
+
+- `OCCP`
+- `PWGTP`
+
+Using ACS weighted estimates, we identified approximately 3.9 million mental health-related workers in the United States.
+
+---
+
+## BLS QCEW
+
+The Bureau of Labor Statistics Quarterly Census of Employment and Wages (QCEW) was used to estimate therapist establishment counts.
+
+---
+
+## Teladoc and BetterHelp SEC Filings
+
+SEC filings from Teladoc and BetterHelp between 2018 and 2024 were used to estimate platform growth and revenue expansion.
+
+---
+
+# What We Found: Four Answers, One Story
+
+## Income, Not Age, Drives Mental Health Burden  
+### SQ1 — Dhwanika Narang
+
+Income was one of the strongest predictors of depression burden.
+
+Low-income adults aged 55–64 experienced the highest burden overall, with approximately 44.2% reporting depression-related indicators.
+
+Young adults aged 18–34 clustered around similar depression rates regardless of income level. However, among older adults, income disparities became much more pronounced.
+
+Low-income adults aged 35–54 also experienced the greatest cost barriers to healthcare access.
+
+![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhxxLOqU0DMEAX7OMEnVmFZPaoa1JqHLLS5e8m8ki5uiv368f4JQHWKvifL7oV7h4DO55OUx0M8SupcvbLndsjE7kxBJDgUpLgErn9SUC273whyphenhyphenYwBwh8Mf_gt5Owxa99Rb20Dk6Oi-5-g6j2JN5y-FhzDWeAblY_ME6_ajRfYtOnoCs0Tl0ue3BEiI4to/w529-h250/mentalAgeIncome.jpg){width="70%"}
+
+*Figure 1. Age × Income and Mental Health Burden*
+
+---
+
+## Platform Growth Has Massively Outpaced Provider Supply  
+### SQ2 — Felisita Cheung
+
+BetterHelp’s U.S. revenue grew dramatically between 2018 and 2024.
+
+Conservatively, our findings estimate approximately one therapist per 11,000 subscribers based on publicly discussed platform estimates.
+
+The supply and demand imbalance may create quality-control bottlenecks as telehealth demand expands.
+
+---
+
+## Racial Gaps Persist and Likely Run Deeper Than Diagnosis Rates Suggest  
+### SQ3 — Helly Harshad Shah
+
+White adults reported the highest diagnosed depression rates across most age groups, while Asian adults consistently reported the lowest diagnosed rates.
+
+However, these findings likely reflect unequal access to diagnosis rather than actual burden differences.
+
+![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgvzMp7VYzBJ3lMABgfVxTiDIonIJmU3sSIydocYvKIGRcnlC_exwWil6QS-1LF3y9Z9qGhUmyquHD9gtTJuu0IqftCj4cUSfEXxAfp-a_jg-ZwbbBqjWAGe2e8YvvaZRl0AFJ5CWN2PS_92NOOvXgAORoen4zwxsSCGLyuSoZKCTiWQNgWhQoN7kisNO0/w507-h331/mentalAge_Race.jpg){width="75%"}
+
+*Figure 2. Race × Age and Depression Rates*
+
+---
+
+## Rural Geography Matters Less Than Income  
+### SQ4 — Khushwant Khatri
+
+Rural and urban depression rates were far more similar than expected.
+
+Urban adults aged 18–34 actually experienced slightly higher cost barriers than rural adults.
+
+These findings suggest that income is a stronger determinant of mental health burden than geography alone.
+
+---
+
+# Integrating the Findings
+
+Together, the four analyses point toward one major conclusion:
+
+> **The largest barrier to mental health access in the United States is economic access, not geography alone.**
+
+Telehealth platforms have expanded rapidly, but provider shortages and unequal healthcare access continue to limit who receives actual treatment.
+
+---
+
+# Limitations and Next Steps
+
+Three major limitations remain:
+
+1. Missing TELEHLTH variable in BRFSS 2024
+2. Self-report bias
+3. Revenue is not identical to treatment access
+
+Future work should incorporate:
+- insurance coverage data
+- prescribing data
+- anonymized telehealth session data
+- AI mental health platforms
+
+---
+
+# Conclusion
+
+Our findings indicate that significantly more individuals report depression than the currently available mental health workforce can realistically support through direct therapy services.
+
+Although metropolitan areas contain larger total numbers of adults reporting depression, proportion-based analysis shows that metro and non-metro differences become much smaller when population size is considered.
+
+Most importantly, income consistently emerged as a stronger determinant of mental health burden than geography alone.
+
+Overall, the analysis highlights both a major public health challenge and an important area for future healthcare innovation.

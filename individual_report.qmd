@@ -1,0 +1,867 @@
+
+---
+title: "Individual Report"
+format: html
+---
+
+## Introduction
+
+In our group project, my responsibility focuses on mental health need in the United States and the availability of mental health workers. I used two major public datasets: the 2024 ACS 1-Year PUMS from the Census Bureau and the 2024 BRFSS raw data from the CDC.
+
+Initially, my idea was to compare data from 2002 with 2023. However, after reading the questionnaires, I decided that 2024 was a better choice. The 2002 questionnaires had different modules and some questions were connected to events such as September 11 attacks and depression. The 2023 questionnaires did not include the September 11 attack and depression, but includes COVID and depression. Because the question wordings and variables were different, comparing 2002 directly with 2023 could be misleading. Therefore, the superlative choice is 2024.
+
+I have recommended to our group the 2024 survey. The goal was to understand two things: how many people report depression, and how many mental health workers are available in the United States in both census data and mobile app industry.
+
+## Data Sources
+
+### ACS 2024 1-Year PUMS
+
+The ACS data came from the 2024 American Community Survey 1-Year Public Use Microdata Sample. This is survey data, not a full count of every person in the United States. Each person in the sample has a weight called `PWGTP`, which allows us to estimate the larger U.S. population.
+
+For the ACS analysis, I used:
+
+- `OCCP`: occupation code
+- `PWGTP`: person weight
+
+I used 2018 Census occupation codes to identify mental health-related workers, including counselors, social workers, psychologists, marriage and family therapists, and related occupations.
+
+An interesting observation is that school counselors are classified under community and social service occupations, while psychiatrists and psychologists are classified under science occupations.
+
+The ACS estimate showed approximately **3,941,701 mental health-related workers** in the United States. This is not the number of respondents interviewed. It is a weighted estimate using survey weights.
+
+### BRFSS 2024
+
+The BRFSS data came from the CDC 2024 raw file `LLCP2024.XPT`. BRFSS is also survey data. The 2024 file contains approximately **457,670 adult respondents**.
+
+The main depression variable used in this project was:
+
+- `ADDEPEV3`: Ever told you had a depressive disorder
+
+In essence, this variable measures whether a person was clinically diagnosed with depression by a health professional.
+
+I also used:
+
+- `MENTHLTH`: number of days mental health was not good
+- `_LLCPWT`: survey weight
+- `_METSTAT`: metro or non-metro status
+- `SEXVAR`: sex
+- `_AGE80`: age, top-coded at 80
+
+## Main Variables
+
+The main target variable in the BRFSS analysis was `ADDEPEV3`, which identifies whether a respondent was ever told by a health professional that they had a depressive disorder.
+
+The explanatory or stratification variables were:
+
+- metro status
+- sex
+- age group
+
+I created derived variables such as `depression_status`, `metro_status`, and `age_group` to make the tables and charts easier to interpret.
+
+## Important Note About Weights
+
+A major part of this project is understanding the difference between raw respondents and weighted totals.
+
+For BRFSS, the raw dataset has approximately 457,670 respondents. However, when I use `_LLCPWT`, the results represent the estimated U.S. adult population.
+
+For ACS, the same idea applies. The PUMS file is a sample, but `PWGTP` expands the sample to estimate the full population.
+
+Therefore, the number **3,941,701 mental health workers** is not the number of people interviewed. It is a weighted estimate of mental health workers in the United States.
+
+This distinction between respondents and weighted totals is extremely important because misunderstanding survey weights can lead to incorrect conclusions.
+
+## Depression in Metro and Non-Metro Areas
+
+One important finding from the BRFSS analysis is that more people who reported a depression diagnosis live in cities. Using weighted totals, the number of people who said “Yes” to depression diagnosis was much larger in metro areas than in non-metro areas.
+
+My groupmate Helly used proportion estimates instead of total weighted counts, and the difference between metro and non-metro areas became much smaller. Soon after, we both agreed on our findings.
+
+This created an important distinction:
+
+- Weighted totals show the total burden.
+- Proportions show the relative share within each group.
+
+This was one of the most important findings in the project because it demonstrates how interpretation changes depending on whether weighted totals or proportions are used.
+
+## Mental Health Workers and Patient Need
+
+The ACS estimate showed approximately **3.9 million mental health-related workers** in the United States.
+
+The BRFSS data also showed many have depression or depressing days. If approximately 20% of adults have been diagnosed with depression, while around 40% report experiencing poor mental health days (depressing days), then the number of people needing mental health support is much larger than the available workforce.
+
+This creates a workforce gap.
+
+Even though there are millions of mental health-related workers, not all of them provide direct therapy services. Some work in education, administration, religious organizations, social service agencies, or research.
+
+This helps explain why many people still struggle to access mental health services despite the existence of millions of workers in related occupations.
+
+## BetterHelp APP
+
+Mental therapy is embraced in the 20th century. The creation of the Diagnostic and Statistical Manual of Mental Disorder, also famously known as The DSM, has led the United States at the forefront of pinpointing mental maladies with labels. Naturally, mobile app is the next frontier to provide therapy and Betterhelp foresaw the challenge.
+
+BetterHelp allows mental patients to receive therapy remotely without needing to travel to an office. The company is growing as insurance coverage increases. Traditionally, BetterHelp operated mainly as a cash-pay platform. However, insurance integration through UpLift, its recent acquisition, may allow the company to reach more patients.
+
+Based on the business information I reviewed, Teladoc, owner of Betterhelp, reported strong United States revenue. Approximately 60% of the company’s revenue share comes from the U.S. market.
+
+## Capacity Estimate
+
+I also considered a hypothetical capacity calculation using Betterhelp's subscription data.
+
+If BetterHelp has 6,000 providers and each provider works 15 hours per day:
+
+- 6,000 × 15 = 90,000 provider hours per day
+
+Over 30 days:
+
+- 90,000 × 30 = 2,700,000 provider hours per month
+
+If each patient requires approximately 10 hours per month:
+
+- 2,700,000 ÷ 10 = 270,000 patients per month
+
+This means that even with thousands of providers, the number of people who can be served monthly remains limited compared to the large number of adults reporting depression.
+
+Conservatively, the ratio may approach 1 therapist per 11,000 BetterHelp subscribers on a macro level estimate of the company's 6,000 therapist and about 70 million US subscribers. This is the utmost challege for the company. 
+
+## SWOT Analysis Contribution
+
+### Strengths
+
+BetterHelp’s main strength is accessibility and human connection. Even though AI tools are becoming more advanced, live therapists can respond emotionally, interpret tone and context, and provide empathy in ways that AI currently cannot fully replicate.
+
+### Weaknesses
+
+A major weakness is capacity. Even with thousands of therapists, the number of patients who can be served remains limited.Therapy is time-intensive, and one therapist cannot realistically support thousands of active patients simultaneously.
+
+Another weakness is cost. If patients must continue paying hundreds of dollars per month without insurance coverage, many may discontinue therapy services. Inflation is not helping the masses either.
+
+### Opportunities
+
+The largest opportunity is insurance expansion. If more insurance plans cover online therapy, BetterHelp may reach a much larger population. I have seen depression rates in the data, and I am extremely sure telehealth is here to stay, 
+
+
+### Threats
+
+One major threat is AI. Patients may consider AI a lower-cost option. I do not blame them. If the cost is causing mental health worries, what's the point? This could pressure BetterHelp’s pricing structure in the future.
+
+Another threat is competition from other telehealth companies expanding virtual mental health services.
+
+## Human Insight Summary (non-AI)
+
+Born for Love: this is the book written by clinical child psychiatrist and former FBI child psychiatry specialist, Dr Bruce Perry. He also wrote the book, 'The Boy Who Was Raised as a Dog.' Reading all his books, I learned that a baby left behind with many dogs will grow better than a baby left behind alone in a small apartment in the city because its caregivers are busy surviving. 
+
+The key findings I have previously cited reinforces my belief that we live under the same cursed world. There is no escaping depression. I am part Polynesian (ocean people), part East Asian/Iberian (land people) and I have observed that tsunamies of life come and it is dealt with Spirit, human connection and nature connection. The modern 12 steps of Alcoholic Anonymous highlights these needs and further study of human tribalism showcase humanity's cohesive structures to survive with one another and to respect Nature. 
+
+We have disrespected nature and embraced individualism. Though both have advantages to our modernity, it has created pitfalls.  To further mitigate our spiral, we start to look at ourselves in connection with tribe and nature. I believe that books and mental apps are great to make informed decision.  The US made informed decisions when it saw its war veterans were 'shell shocked.'
+
+Plugging in a positive tribe (neighborhood) through community service and talking with counselors, while using mental apps and AI to further understand theories and methodologies like Cognitive Behavior Therapy to overcome mental constraint are good for everyone because the unconscious is real.
+
+Unplugging to a tribe means death eventually. As the quote says: "United we stand, divided we fall." and Julius Ceasar famously said, "divide et impera" (divide and conquer). When a society is divided in itself, it cannot stand the tsunamies of life.  
+
+Ultimately, mental health apps are less than 50 years old. Humanity is over 1.4 million years old (groundbreaking discovery in Atapuerca, Spain, year 2022). We survived as a specie because of unity and common sense. We are humans because we can choose to love. 
+```
+
+## R CODING
+
+
+```{r}
+#Data Acquisition 2024 PUMS Mental Health Occupation Data from CSV
+# Social Science Occupations include counselors and Science-based Occupations like Psychiatrist
+
+library(tidyverse)
+library(gt)
+
+acs_mental_health_occupations_2024 <- read_csv(
+    file.path("data",
+              "mentalhealth",
+              "acs_2024_pums_mental_health_occupations.csv"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        OCCP = as.character(OCCP),
+        survey_weight = as.numeric(PWGTP),
+        occupation = case_match(
+            OCCP,
+            "1821" ~ "Clinical and counseling psychologists",
+            "1822" ~ "School psychologists",
+            "1825" ~ "Other psychologists",
+            "2001" ~ "Substance abuse and behavioral disorder counselors",
+            "2002" ~ "Educational, guidance, and career counselors",
+            "2003" ~ "Marriage and family therapists",
+            "2004" ~ "Mental health counselors",
+            "2005" ~ "Rehabilitation counselors",
+            "2006" ~ "Counselors, all other",
+            "2011" ~ "Child, family, and school social workers",
+            "2012" ~ "Healthcare social workers",
+            "2013" ~ "Mental health and substance abuse social workers",
+            "2014" ~ "Social workers, all other",
+            "2015" ~ "Probation officers",
+            "2016" ~ "Social and human service assistants",
+            "2025" ~ "Community service specialists",
+            "2040" ~ "Clergy",
+            "2050" ~ "Religious directors",
+            "2060" ~ "Religious workers"
+        )
+    ) |>
+    group_by(OCCP, occupation) |>
+    summarize(
+        estimated_residents = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(estimated_residents))
+
+acs_mental_health_occupations_2024 |>
+    gt(id = "acs_mental_health_occupations_table") |>
+    tab_header(
+        title = "Estimated Mental Health and Related Workers",
+        subtitle = "2024 ACS 1-Year PUMS"
+    ) |>
+    cols_label(
+        OCCP = "2018 Census Occupation Code",
+        occupation = "Occupation",
+        estimated_residents = "Estimated Residents"
+    ) |>
+    fmt_number(
+        columns = estimated_residents,
+        decimals = 0
+    )
+```
+
+```{r}
+#' Total Estimated Mental Health Workers
+
+library(tidyverse)
+library(gt)
+
+total_mental_health_workers <- read_csv(
+    file.path("data",
+              "mentalhealth",
+              "acs_2024_pums_mental_health_occupations.csv"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        survey_weight = as.numeric(PWGTP)
+    ) |>
+    summarize(
+        total_workers = sum(survey_weight, na.rm = TRUE)
+    )
+
+total_mental_health_workers |>
+    gt(id = "total_mental_health_workers") |>
+    tab_header(
+        title = "Total Estimated Mental Health Workers",
+        subtitle = "2024 ACS 1-Year PUMS"
+    ) |>
+    cols_label(
+        total_workers = "Total Workers"
+    ) |>
+    fmt_number(
+        columns = total_workers,
+        decimals = 0
+    )
+```
+
+```{r}
+#' Mental Health Workers into Two Categories : Science and Social Service
+
+
+library(tidyverse)
+library(gt)
+
+mental_health_workers_summary <- read_csv(
+    file.path("data",
+              "mentalhealth",
+              "acs_2024_pums_mental_health_occupations.csv"),
+    show_col_types = FALSE
+) |>
+    mutate(
+        OCCP = as.numeric(OCCP),
+        survey_weight = as.numeric(PWGTP),
+        occupation_category = case_when(
+            OCCP >= 2001 & OCCP <= 2060 ~ "Community and Social Service Occupations",
+            OCCP %in% c(1821, 1822, 1825) ~ "Science Occupations",
+            TRUE ~ NA_character_
+        )
+    ) |>
+    filter(!is.na(occupation_category)) |>
+    group_by(occupation_category) |>
+    summarize(
+        total_workers = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(total_workers))
+
+mental_health_workers_summary |>
+    gt(id = "mental_health_workers_summary") |>
+    tab_header(
+        title = "Total Mental Health Workers",
+        subtitle = "2024 ACS 1-Year PUMS"
+    ) |>
+    cols_label(
+        occupation_category = "Occupation Category",
+        total_workers = "Total Workers"
+    ) |>
+    fmt_number(
+        columns = total_workers,
+        decimals = 0
+    )
+
+```
+```{r}
+# Data Acquisition for 2024 BRFSS Mental Health Data
+
+library(tidyverse)
+library(glue)
+library(httr2)
+library(haven)
+
+load_brfss_mental_health_data <- function(){
+    
+    base_dir <- file.path("data", "mentalhealth")
+    
+    if(!dir.exists(base_dir)){
+        dir.create(base_dir,
+                   showWarnings = FALSE,
+                   recursive = TRUE)
+    }
+    
+    zip_file <- file.path(base_dir, "LLCP2024XPT.zip")
+    
+    file_name_out <- file.path(base_dir,
+                               "brfss_2024_mental_health.csv")
+    
+    if(!file.exists(file_name_out)){
+        
+        # Download ZIP if needed
+        if(!file.exists(zip_file)){
+            request("https://www.cdc.gov") |>
+                req_url_path("brfss",
+                             "annual_data",
+                             "2024",
+                             "files",
+                             "LLCP2024XPT.zip") |>
+                req_headers(`User-Agent` = "Mozilla/5.0") |>
+                req_perform(zip_file)
+        }
+        
+        
+        unzip(zip_file, exdir = base_dir)
+        
+        
+        xpt_file <- list.files(base_dir,
+                               pattern = "\\.XPT$",
+                               full.names = TRUE,
+                               recursive = TRUE)[1]
+        
+       
+        brfss_data <- read_xpt(xpt_file) |>
+            select(
+                MENTHLTH,
+                ADDEPEV3,
+                SEXVAR,
+                `_AGE80`,
+                `_LLCPWT`
+            ) |>
+            mutate(
+                mental_health_days = case_when(
+                    MENTHLTH >= 0 & MENTHLTH <= 30 ~ MENTHLTH,
+                    MENTHLTH == 88 ~ 0,
+                    TRUE ~ NA_real_
+                ),
+                depression_status = case_match(
+                    ADDEPEV3,
+                    1 ~ "Yes",
+                    2 ~ "No",
+                    7 ~ "Don't know",
+                    9 ~ "Refused"
+                ),
+                sex = case_match(
+                    SEXVAR,
+                    1 ~ "Male",
+                    2 ~ "Female"
+                ),
+                age = as.numeric(`_AGE80`),
+                survey_weight = as.numeric(`_LLCPWT`)
+            ) |>
+            select(
+                mental_health_days,
+                depression_status,
+                sex,
+                age,
+                survey_weight
+            )
+        
+        write_csv(brfss_data, file_name_out)
+    }
+    
+    read_csv(file_name_out, show_col_types = FALSE)
+}
+
+brfss_mental_health_2024 <- load_brfss_mental_health_data()
+
+
+```
+
+```{r}
+
+# This table shows the dumber of people with depressing days in a month. A person can be depressed without clinical diagnosis.
+# About 40% have depressing days
+
+library(gt)
+
+brfss_mental_health_days_table <- brfss_mental_health_2024 |>
+    mutate(
+        menthlth_group = case_when(
+            mental_health_days >= 1 & mental_health_days <= 30 ~ "1 - 30",
+            mental_health_days == 0 ~ "88",
+            is.na(mental_health_days) ~ "77 / 99 / Missing"
+        ),
+        value_label = case_when(
+            menthlth_group == "1 - 30" ~ "Number of days mental health was not good",
+            menthlth_group == "88" ~ "None",
+            TRUE ~ "Don't know / Refused / Missing"
+        )
+    ) |>
+    group_by(menthlth_group, value_label) |>
+    summarize(
+        frequency = n(),
+        weighted_total = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    mutate(
+        percentage = frequency / sum(frequency),
+        weighted_percentage = weighted_total / sum(weighted_total)
+    ) |>
+    arrange(desc(weighted_total)) |>   
+    gt(id = "brfss_mental_health_days_table") |>
+    tab_header(
+        title = "Number of Days Mental Health Not Good",
+        subtitle = "BRFSS 2024: MENTHLTH"
+    ) |>
+    cols_label(
+        menthlth_group = "Value",
+        value_label = "Value Label",
+        frequency = "Frequency",
+        percentage = "Percentage",
+        weighted_total = "Weighted Total",
+        weighted_percentage = "Weighted Percentage"
+    ) |>
+    fmt_number(
+        columns = c(frequency, weighted_total),
+        decimals = 0
+    ) |>
+    fmt_percent(
+        columns = c(percentage, weighted_percentage),
+        decimals = 2
+    ) |>
+    tab_source_note(
+        source_note = "MENTHLTH: Number of days mental health not good in past 30 days"
+    )
+
+brfss_mental_health_days_table
+```
+
+```{r}
+#' Are You Depressed? (with diagnosis)
+# This information shows respondents that agreed to have been diagnossed with depression. 
+# About 20% were diagnosed
+
+library(tidyverse)
+library(gt)
+
+brfss_depression_table <- brfss_mental_health_2024 |>
+    mutate(
+        dep_group = case_match(
+            depression_status,
+            "Yes" ~ "1",
+            "No" ~ "2",
+            "Don't know" ~ "7",
+            "Refused" ~ "9",
+            .default = "BLANK"
+        ),
+        value_label = case_match(
+            dep_group,
+            "1" ~ "Yes",
+            "2" ~ "No",
+            "7" ~ "Don't know / Not sure",
+            "9" ~ "Refused",
+            "BLANK" ~ "Not asked or Missing"
+        )
+    ) |>
+    group_by(dep_group, value_label) |>
+    summarize(
+        frequency = n(),
+        weighted_total = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    mutate(
+        percentage = frequency / sum(frequency),
+        weighted_percentage = weighted_total / sum(weighted_total)
+    ) |>
+    arrange(desc(weighted_total)) |>
+    gt(id = "brfss_depression_table") |>
+    tab_header(
+        title = "Are you depressed?",
+        subtitle = "BRFSS 2024: ADDEPEV3"
+    ) |>
+    cols_label(
+        dep_group = "Value",
+        value_label = "Value Label",
+        frequency = "Frequency",
+        percentage = "Percentage",
+        weighted_total = "Weighted Total",
+        weighted_percentage = "Weighted Percentage"
+    ) |>
+    fmt_number(
+        columns = c(frequency, weighted_total),
+        decimals = 0
+    ) |>
+    fmt_percent(
+        columns = c(percentage, weighted_percentage),
+        decimals = 2
+    ) |>
+    tab_source_note(
+        source_note = "ADDEPEV3: Ever told you have a depressive disorder"
+    )
+
+brfss_depression_table
+```
+
+
+```{r}
+#'  Data Acquisition Load BRFSS 2024 with Geographic + Metro Status
+#'  We are understanding the 20% with depresion diagnosis based on gender and age group
+
+library(tidyverse)
+library(haven)
+library(gt)
+
+brfss_mental_health_2024_geo <- read_xpt(
+    file.path("data",
+              "mentalhealth",
+              "LLCP2024.XPT")
+) |>
+    select(
+        MENTHLTH,
+        ADDEPEV3,
+        SEXVAR,
+        `_AGE80`,
+        `_LLCPWT`,
+        `_STATE`,
+        `_METSTAT`
+    ) |>
+    mutate(
+        mental_health_days = case_when(
+            MENTHLTH >= 0 & MENTHLTH <= 30 ~ MENTHLTH,
+            MENTHLTH == 88 ~ 0,
+            TRUE ~ NA_real_
+        ),
+        depression_status = case_match(
+            ADDEPEV3,
+            1 ~ "Yes",
+            2 ~ "No",
+            7 ~ "Don't know",
+            9 ~ "Refused"
+        ),
+        sex = case_match(
+            SEXVAR,
+            1 ~ "Male",
+            2 ~ "Female"
+        ),
+        age = as.numeric(`_AGE80`),
+        survey_weight = as.numeric(`_LLCPWT`),
+        metro_status = case_match(
+            `_METSTAT`,
+            1 ~ "Metropolitan",
+            2 ~ "Non-Metropolitan",
+            .default = "Missing"
+        ),
+        state = case_match(
+            `_STATE`,
+            1 ~ "Alabama", 2 ~ "Alaska", 4 ~ "Arizona", 5 ~ "Arkansas",
+            6 ~ "California", 8 ~ "Colorado", 9 ~ "Connecticut",
+            10 ~ "Delaware", 11 ~ "DC", 12 ~ "Florida",
+            13 ~ "Georgia", 15 ~ "Hawaii", 16 ~ "Idaho",
+            17 ~ "Illinois", 18 ~ "Indiana", 19 ~ "Iowa",
+            20 ~ "Kansas", 21 ~ "Kentucky", 22 ~ "Louisiana",
+            23 ~ "Maine", 24 ~ "Maryland", 25 ~ "Massachusetts",
+            26 ~ "Michigan", 27 ~ "Minnesota", 28 ~ "Mississippi",
+            29 ~ "Missouri", 30 ~ "Montana", 31 ~ "Nebraska",
+            32 ~ "Nevada", 33 ~ "New Hampshire", 34 ~ "New Jersey",
+            35 ~ "New Mexico", 36 ~ "New York", 37 ~ "North Carolina",
+            38 ~ "North Dakota", 39 ~ "Ohio", 40 ~ "Oklahoma",
+            41 ~ "Oregon", 42 ~ "Pennsylvania", 44 ~ "Rhode Island",
+            45 ~ "South Carolina", 46 ~ "South Dakota",
+            47 ~ "Tennessee", 48 ~ "Texas", 49 ~ "Utah",
+            50 ~ "Vermont", 51 ~ "Virginia", 53 ~ "Washington",
+            54 ~ "West Virginia", 55 ~ "Wisconsin", 56 ~ "Wyoming",
+            .default = "Missing"
+        )
+    ) |>
+    select(
+        mental_health_days,
+        depression_status,
+        sex,
+        age,
+        survey_weight,
+        state,
+        metro_status
+    )
+
+brfss_mental_health_2024_geo |>
+    slice_head(n = 10)
+
+depression_by_metro <- brfss_mental_health_2024_geo |>
+    filter(depression_status == "Yes") |>
+    group_by(metro_status) |>
+    summarize(
+        n_respondents = n(),
+        estimated_residents = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(desc(estimated_residents))
+
+depression_by_metro |>
+    gt(id = "depression_by_metro") |>
+    tab_header(
+        title = "Depression Status by Metro Status",
+        subtitle = "BRFSS 2024: Respondents Who Said Yes"
+    ) |>
+    cols_label(
+        metro_status = "Metro Status",
+        n_respondents = "Respondents",
+        estimated_residents = "Estimated Residents"
+    ) |>
+    fmt_number(
+        columns = c(n_respondents, estimated_residents),
+        decimals = 0
+    )
+
+depression_by_sex_age <- brfss_mental_health_2024_geo |>
+    filter(depression_status == "Yes") |>
+    mutate(
+        age_group = case_when(
+            age >= 18 & age <= 24 ~ "18–24",
+            age >= 25 & age <= 34 ~ "25–34",
+            age >= 35 & age <= 44 ~ "35–44",
+            age >= 45 & age <= 54 ~ "45–54",
+            age >= 55 & age <= 64 ~ "55–64",
+            age >= 65 ~ "65+",
+            TRUE ~ NA_character_
+        )
+    ) |>
+    filter(!is.na(age_group)) |>
+    group_by(sex, age_group) |>
+    summarize(
+        n_respondents = n(),
+        estimated_residents = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    arrange(sex, age_group)
+
+depression_by_sex_age |>
+    gt(id = "depression_by_sex_age") |>
+    tab_header(
+        title = "Depression Status by Sex and Age Group",
+        subtitle = "BRFSS 2024: Respondents Who Said Yes"
+    ) |>
+    cols_label(
+        sex = "Sex",
+        age_group = "Age Group",
+        n_respondents = "Respondents",
+        estimated_residents = "Estimated Residents"
+    ) |>
+    fmt_number(
+        columns = c(n_respondents, estimated_residents),
+        decimals = 0
+    )
+```
+
+```{r}
+#' Metro vs Non-Metro Depression Diagnosis: GT Table + Pie Chart
+
+library(tidyverse)
+library(gt)
+library(ggplot2)
+
+depression_metro_summary <- brfss_mental_health_2024_geo |>
+    filter(
+        depression_status == "Yes",
+        metro_status != "Missing"
+    ) |>
+    group_by(metro_status) |>
+    summarize(
+        n_respondents = n(),
+        estimated_residents = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    mutate(
+        percent = estimated_residents / sum(estimated_residents)
+    ) |>
+    arrange(desc(estimated_residents))
+
+depression_metro_summary |>
+    gt(id = "depression_metro_summary") |>
+    tab_header(
+        title = "Depression Diagnosis by Metro Status",
+        subtitle = "BRFSS 2024: Respondents Who Said Yes to ADDEPEV3"
+    ) |>
+    cols_label(
+        metro_status = "Metro Status",
+        n_respondents = "Respondents",
+        estimated_residents = "Estimated Residents",
+        percent = "Share of Estimated Residents"
+    ) |>
+    fmt_number(
+        columns = c(n_respondents, estimated_residents),
+        decimals = 0
+    ) |>
+    fmt_percent(
+        columns = percent,
+        decimals = 2
+    )
+
+ggplot(
+    depression_metro_summary,
+    aes(x = "",
+        y = estimated_residents,
+        fill = metro_status)
+) +
+    geom_col(width = 1) +
+    coord_polar(theta = "y") +
+    labs(
+        title = "Share of Adults Diagnosed with Depression by Metro Status",
+        subtitle = "BRFSS 2024 weighted estimate",
+        fill = "Metro Status"
+    ) +
+    theme_void()
+```
+
+```{r}
+#' Actual Numbers  of Weighted Totals  of People with Diagnosis
+
+library(tidyverse)
+library(gt)
+
+depression_metro_numbers <- brfss_mental_health_2024_geo |>
+    filter(
+        depression_status == "Yes",
+        metro_status != "Missing"
+    ) |>
+    group_by(metro_status) |>
+    summarize(
+        actual_respondents = n(),
+        weighted_total = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    mutate(
+        share = weighted_total / sum(weighted_total)
+    ) |>
+    arrange(desc(weighted_total))
+
+depression_metro_numbers |>
+    gt(id = "depression_metro_numbers") |>
+    tab_header(
+        title = "Actual Respondents and Weighted Totals",
+        subtitle = "BRFSS 2024: Depression Diagnosis = Yes"
+    ) |>
+    cols_label(
+        metro_status = "Metro Status",
+        actual_respondents = "Actual Respondents",
+        weighted_total = "Weighted Total",
+        share = "Share"
+    ) |>
+    fmt_number(
+        columns = c(actual_respondents, weighted_total),
+        decimals = 0
+    ) |>
+    fmt_percent(
+        columns = share,
+        decimals = 2
+    )
+
+```
+
+```{r}
+# Metro and non-Metro Classification of people with Depression Diagnosis. This is Proportion. 
+library(tidyverse)
+library(haven)
+library(gt)
+
+brfss_mental_health_2024_geo <- read_xpt(
+    file.path("data",
+              "mentalhealth",
+              "LLCP2024.XPT")
+) |>
+    select(
+        MENTHLTH,
+        ADDEPEV3,
+        SEXVAR,
+        `_AGE80`,
+        `_LLCPWT`,
+        `_STATE`,
+        `_METSTAT`
+    ) |>
+    mutate(
+        mental_health_days = case_when(
+            MENTHLTH >= 0 & MENTHLTH <= 30 ~ MENTHLTH,
+            MENTHLTH == 88 ~ 0,
+            TRUE ~ NA_real_
+        ),
+        depression_status = case_match(
+            ADDEPEV3,
+            1 ~ "Yes",
+            2 ~ "No",
+            7 ~ "Don't know",
+            9 ~ "Refused"
+        ),
+        sex = case_match(
+            SEXVAR,
+            1 ~ "Male",
+            2 ~ "Female"
+        ),
+        age = as.numeric(`_AGE80`),
+        survey_weight = as.numeric(`_LLCPWT`),
+        metro_status = case_match(
+            `_METSTAT`,
+            1 ~ "Metropolitan",
+            2 ~ "Non-Metropolitan",
+            .default = "Missing"
+        )
+    )
+
+metro_plot_data <- brfss_mental_health_2024_geo |>
+    filter(
+        depression_status %in% c("Yes", "No"),
+        metro_status != "Missing"
+    ) |>
+    group_by(metro_status, depression_status) |>
+    summarize(
+        weighted_total = sum(survey_weight, na.rm = TRUE),
+        .groups = "drop"
+    ) |>
+    group_by(metro_status) |>
+    mutate(
+        proportion = weighted_total / sum(weighted_total)
+    )
+
+ggplot(
+    metro_plot_data,
+    aes(x = metro_status,
+        y = proportion,
+        fill = depression_status)
+) +
+    geom_col(position = "fill") +
+    scale_y_continuous(labels = scales::percent) +
+    labs(
+        title = "Depression Status by Metro vs Non-Metro",
+        x = "Metro Status",
+        y = "Proportion",
+        fill = "Depression Status"
+    ) +
+    theme_bw()
+
+```
+
+
